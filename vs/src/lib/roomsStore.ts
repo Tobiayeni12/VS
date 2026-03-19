@@ -144,6 +144,28 @@ export function deleteRoom(code: string, requesterId: string): boolean {
   return rooms.delete(code);
 }
 
+function autoResolveByes(rounds: BracketMatch[][]): void {
+  // Only the first round can have a bye (last match with gameB null)
+  const round0 = rounds[0];
+  if (!round0) return;
+  for (let matchIdx = 0; matchIdx < round0.length; matchIdx++) {
+    const match = round0[matchIdx]!;
+    if (match.gameA && !match.gameB && !match.winner) {
+      match.winner = match.gameA;
+      if (rounds.length > 1) {
+        const nextRound = rounds[1]!;
+        const nextMatchIndex = Math.floor(matchIdx / 2);
+        const isLeftSlot = matchIdx % 2 === 0;
+        const nextMatch = nextRound[nextMatchIndex];
+        if (nextMatch) {
+          if (isLeftSlot) nextMatch.gameA = match.gameA;
+          else nextMatch.gameB = match.gameA;
+        }
+      }
+    }
+  }
+}
+
 function shuffle<T>(arr: T[]): T[] {
   const copy = [...arr];
   for (let i = copy.length - 1; i > 0; i--) {
@@ -178,6 +200,35 @@ export function startKnockout(code: string): RoomState | undefined {
     currentPhase: "left",
     animationComplete: false,
   };
+
+  // Auto-resolve bye matches created by odd-length game lists
+  autoResolveByes(bracket.left.rounds);
+  autoResolveByes(bracket.right.rounds);
+
+  // If right side is fully resolved by byes (e.g. 1 game), mark it complete now
+  const rightFinal = bracket.right.rounds[bracket.right.rounds.length - 1];
+  if (rightFinal && rightFinal.every((m) => m.winner)) {
+    bracket.right.winner = rightFinal[0]?.winner ?? null;
+    bracket.right.completed = true;
+  }
+
+  // If left is also fully resolved (edge case: 2 games total, both byes), go straight to finals
+  const leftFinal = bracket.left.rounds[bracket.left.rounds.length - 1];
+  if (leftFinal && leftFinal.every((m) => m.winner)) {
+    bracket.left.winner = leftFinal[0]?.winner ?? null;
+    bracket.left.completed = true;
+    if (bracket.left.winner && bracket.right.winner) {
+      bracket.finals = {
+        id: randomUUID(),
+        gameA: bracket.left.winner,
+        gameB: bracket.right.winner,
+        winner: null,
+      };
+      bracket.currentPhase = "finals";
+    } else {
+      bracket.currentPhase = "right";
+    }
+  }
 
   room.bracket = bracket;
   room.status = "knockout";
@@ -233,7 +284,18 @@ export function chooseWinner(
       if (finalRound && finalRound.every((m) => m.winner)) {
         bracket.left.winner = finalRound[0]?.winner || null;
         bracket.left.completed = true;
-        bracket.currentPhase = "right";
+        // If right was already resolved by byes, jump straight to finals
+        if (bracket.right.completed && bracket.left.winner && bracket.right.winner) {
+          bracket.finals = {
+            id: randomUUID(),
+            gameA: bracket.left.winner,
+            gameB: bracket.right.winner,
+            winner: null,
+          };
+          bracket.currentPhase = "finals";
+        } else {
+          bracket.currentPhase = "right";
+        }
       }
     }
   } else if (currentPhase === "right") {
