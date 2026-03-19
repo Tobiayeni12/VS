@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { setSettings, getRoom } from "@/lib/roomsStore";
+import { setSettings, getRoom, markHostReady } from "@/lib/roomsStore";
 
 type Params = {
   params: {
@@ -11,13 +11,33 @@ export async function POST(req: NextRequest, { params }: Params) {
   try {
     const code = params.code.toUpperCase();
     const body = await req.json().catch(() => ({}));
-    const { maxGames, maxGamesPerPlayer, gameTitle, playerId, vsTitle } = body as {
+    const { maxGames, maxGamesPerPlayer, gameTitle, playerId, vsTitle, markReady } = body as {
       maxGames?: number;
       maxGamesPerPlayer?: number;
       gameTitle?: string;
       playerId?: string;
       vsTitle?: string;
+      markReady?: boolean;
     };
+
+    if (markReady === true) {
+      if (!playerId) {
+        return NextResponse.json(
+          { error: "playerId required to mark host ready" },
+          { status: 400 }
+        );
+      }
+
+      const room = markHostReady(code, playerId);
+      if (!room) {
+        return NextResponse.json(
+          { error: "Room not found or not authorized" },
+          { status: 403 }
+        );
+      }
+
+      return NextResponse.json(room);
+    }
 
     if (typeof gameTitle === "string" && gameTitle.trim()) {
       const room = getRoom(code);

@@ -84,6 +84,8 @@ export default function RoomLobbyPage() {
 
   const gamesRemaining = room.maxGames - room.gamePool.length;
   const isHost = room.hostId === playerId;
+  const waitingForHostSummary =
+    room.status === "settings" && !room.hostReady && !isHost;
   const canAddGames = Boolean(playerId) && !isHost && room.status === "settings";
   const hasStarted = room.status !== "settings";
   const myCount = playerId ? room.playerGameCounts?.[playerId] ?? 0 : 0;
@@ -102,6 +104,15 @@ export default function RoomLobbyPage() {
         ← Back
       </button>
       <div className="w-full max-w-2xl space-y-8">
+        {waitingForHostSummary && (
+          <section className="rounded-xl border border-emerald-500/40 bg-emerald-950/40 p-6 text-center">
+            <h2 className="text-xl font-bold text-green-100">Waiting for host</h2>
+            <p className="mt-2 text-sm text-emerald-200/80">
+              The host is resetting this VS. You can continue when the host opens the VS Summary page.
+            </p>
+          </section>
+        )}
+
         <header className="flex flex-col items-center gap-3 text-center">
           <h1 className="text-4xl font-bold">Room {room.code}</h1>
           <p className="text-sm text-emerald-200/80">
@@ -129,7 +140,11 @@ export default function RoomLobbyPage() {
 
         <section className="rounded-xl border border-emerald-500/40 bg-emerald-950/40 p-4 space-y-3">
           <h2 className="text-lg font-semibold text-green-100">Add your games</h2>
-          {canAddGames ? (
+          {waitingForHostSummary ? (
+            <p className="text-xs text-emerald-200/80">
+              Game submissions are locked until the host opens VS Summary.
+            </p>
+          ) : canAddGames ? (
             <>
               <form
                 onSubmit={handleAddGame}

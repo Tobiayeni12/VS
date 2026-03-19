@@ -56,6 +56,7 @@ export type RoomState = {
   code: string;
   vsTitle: string;
   hostId: string;
+  hostReady: boolean;
   createdAt: number;
   players: Player[];
   currentRound: Round | null;

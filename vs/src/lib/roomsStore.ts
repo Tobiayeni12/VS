@@ -33,6 +33,7 @@ export function createRoom(hostName: string): RoomState {
     code,
     vsTitle: "",
     hostId: host.id,
+    hostReady: false,
     createdAt: Date.now(),
     players: [host],
     currentRound: null,
@@ -68,7 +69,16 @@ export function setSettings(
   if (typeof vsTitle === "string") {
     room.vsTitle = vsTitle.trim();
   }
+  room.hostReady = false;
   room.status = "settings";
+  return room;
+}
+
+export function markHostReady(code: string, requesterId: string): RoomState | undefined {
+  const room = rooms.get(code);
+  if (!room) return undefined;
+  if (room.hostId !== requesterId) return undefined;
+  room.hostReady = true;
   return room;
 }
 

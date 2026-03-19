@@ -38,6 +38,17 @@ export default function RoomSummaryPage() {
     fetchState();
   }, []);
 
+  useEffect(() => {
+    const isHost = Boolean(playerId && room && room.hostId === playerId);
+    if (!isHost) return;
+
+    fetch(`/api/rooms/${code}/settings`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ markReady: true, playerId }),
+    }).catch(() => undefined);
+  }, [code, playerId, room?.hostId]);
+
   async function handleAddGame(e: FormEvent) {
     e.preventDefault();
     if (!gameTitle.trim()) return;
