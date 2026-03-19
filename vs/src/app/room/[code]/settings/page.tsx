@@ -10,6 +10,10 @@ export default function RoomSettingsPage() {
   const code = params.code.toUpperCase();
   const playerId = search.get("playerId") ?? "";
   const name = search.get("name") ?? "";
+  const summaryHref = `/room/${code}/summary?${new URLSearchParams({
+    playerId,
+    name,
+  }).toString()}`;
 
   const [maxGames, setMaxGames] = useState(8);
   const [maxGamesPerPlayer, setMaxGamesPerPlayer] = useState(2);
@@ -17,7 +21,7 @@ export default function RoomSettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function handleLeaveRoom() {
+  async function handleLeaveRoomCode() {
     const confirmed = window.confirm(
       "Leave this room and clear this lobby code? All joined users in this room will be removed."
     );
@@ -68,7 +72,7 @@ export default function RoomSettingsPage() {
     <main className="relative flex min-h-screen flex-col items-center justify-center px-4 py-8">
       <button
         type="button"
-        onClick={handleLeaveRoom}
+        onClick={() => router.push(summaryHref)}
         className="absolute left-6 top-6 text-sm font-semibold text-white/90 transition hover:text-green-200"
         style={{ fontFamily: "Racing, serif" }}
       >
@@ -144,6 +148,14 @@ export default function RoomSettingsPage() {
             className="w-full rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(0,0,0,0.35)] transition hover:bg-slate-700 hover:ring-2 hover:ring-green-400/70 hover:shadow-[0_0_14px_rgba(74,222,128,0.35)] disabled:opacity-60"
           >
             {loading ? "Saving..." : "Next"}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleLeaveRoomCode}
+            className="w-full text-sm font-semibold text-red-300 transition hover:text-red-200"
+          >
+            Leave room code
           </button>
         </form>
       </div>
