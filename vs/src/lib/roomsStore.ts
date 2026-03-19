@@ -115,6 +115,13 @@ export function getRoom(code: string): RoomState | undefined {
   return rooms.get(code);
 }
 
+export function deleteRoom(code: string, requesterId: string): boolean {
+  const room = rooms.get(code);
+  if (!room) return false;
+  if (room.hostId !== requesterId) return false;
+  return rooms.delete(code);
+}
+
 function shuffle<T>(arr: T[]): T[] {
   const copy = [...arr];
   for (let i = copy.length - 1; i > 0; i--) {

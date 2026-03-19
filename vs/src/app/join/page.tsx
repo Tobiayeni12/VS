@@ -48,7 +48,7 @@ export default function JoinPage() {
       </button>
       <div className="w-full max-w-md space-y-6">
         <h1 className="text-3xl font-bold text-center">Join VS</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
           <div className="space-y-2">
             <label className="block text-sm font-medium text-slate-200">
               Room code
@@ -58,6 +58,7 @@ export default function JoinPage() {
               value={code}
               onChange={(e) => setCode(e.target.value)}
               maxLength={8}
+              autoComplete="off"
             />
           </div>
           <div className="space-y-2">
@@ -69,6 +70,7 @@ export default function JoinPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
+              autoComplete="off"
             />
           </div>
           {error && (

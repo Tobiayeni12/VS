@@ -45,7 +45,7 @@ export default function CreatePage() {
       </button>
       <div className="w-full max-w-md space-y-6">
         <h1 className="text-3xl font-bold text-center">Create VS</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
           <div className="space-y-2">
             <label className="block text-sm font-medium text-slate-200">
               Your name
@@ -55,6 +55,7 @@ export default function CreatePage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Host"
+              autoComplete="off"
             />
           </div>
           {error && (

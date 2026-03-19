@@ -17,6 +17,22 @@ export default function RoomSettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  async function handleLeaveRoom() {
+    const confirmed = window.confirm(
+      "Leave this room and clear this lobby code? All joined users in this room will be removed."
+    );
+    if (!confirmed) return;
+
+    if (playerId) {
+      await fetch(`/api/rooms/${code}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playerId }),
+      }).catch(() => undefined);
+    }
+    router.push("/create");
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -50,7 +66,7 @@ export default function RoomSettingsPage() {
     <main className="relative flex min-h-screen flex-col items-center justify-center px-4 py-8">
       <button
         type="button"
-        onClick={() => router.push("/create")}
+        onClick={handleLeaveRoom}
         className="absolute left-6 top-6 text-sm font-semibold text-white/90 transition hover:text-green-200"
         style={{ fontFamily: "Racing, serif" }}
       >

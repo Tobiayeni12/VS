@@ -315,10 +315,16 @@ export default function KnockoutPage() {
             {isHost && (
               <button
                 type="button"
-                onClick={() => router.push("/")}
+                onClick={() => {
+                  const qp = new URLSearchParams({
+                    playerId,
+                    name,
+                  });
+                  router.push(`/room/${code}/settings?${qp.toString()}`);
+                }}
                 className="mx-auto mt-4 block w-full max-w-md rounded-lg bg-slate-800 px-4 py-3 text-lg font-semibold text-green-300 shadow-[0_2px_8px_rgba(0,0,0,0.35)] transition hover:bg-slate-700 hover:ring-2 hover:ring-green-400/70"
               >
-                Back to Lobby
+                Restart
               </button>
             )}
 
