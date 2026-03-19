@@ -192,10 +192,21 @@ export default function KnockoutPage() {
     );
   }
 
-  if (!room || !room.bracket) {
+  if (!room) {
     return (
       <main className="flex min-h-screen items-center justify-center">
         <p className="text-slate-300">{error || "Room not found."}</p>
+      </main>
+    );
+  }
+
+  // Game was reset by host — send everyone back to the lobby
+  if (!room.bracket) {
+    const qp = new URLSearchParams({ playerId, name });
+    router.push(`/room/${code}?${qp.toString()}`);
+    return (
+      <main className="flex min-h-screen items-center justify-center">
+        <p className="text-slate-300">Game was reset. Heading back to lobby…</p>
       </main>
     );
   }
