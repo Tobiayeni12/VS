@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "Mightora";
+  src: url("/fonts/Mightora.woff2") format("woff2"),
+       url("/fonts/Mightora.woff") format("woff"),
+       url("/fonts/Mightora.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Patriotic Demo";
+  src: url("/fonts/PatrioticDemo.woff2") format("woff2"),
+       url("/fonts/PatrioticDemo.woff") format("woff"),
+       url("/fonts/PatrioticDemo.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Nautica Rounded Thin";
+  src: url("/fonts/NauticaRoundedThin.woff2") format("woff2"),
+       url("/fonts/NauticaRoundedThin.woff") format("woff"),
+       url("/fonts/NauticaRoundedThin.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "NauticaRoundedRegular";
+  src: url("/fonts/NauticaRoundedRegular.ttf") format("truetype"),
+       url("/fonts/NauticaRoundedRegular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Racing";
+  src: url("/fonts/Racing.ttf") format("truetype"),
+       url("/fonts/Racing.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+body {
+  background: linear-gradient(-45deg, #0f0f0f, #1a4d3a, #0f0f0f, #2d5a47);
+  background-size: 400% 400%;
+  animation: gradient 15s ease infinite;
+  color: #d1fae5;
+  font-family: "Racing", Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  min-height: 100vh;
+}
+
+@layer components {
+  button,
+  .btn-font,
+  .vs-btn,
+  .vs-btn-block {
+    font-family: "NauticaRoundedRegular", Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  .vs-btn {
+    @apply inline-flex min-w-64 items-center justify-center rounded-xl bg-slate-800 px-10 py-3 text-sm font-semibold tracking-wide text-white shadow-lg shadow-black/30 ring-2 ring-emerald-500 transition hover:bg-slate-700 focus:outline-none focus:ring-4 focus:ring-emerald-400/40;
+  }
+
+  .vs-btn-block {
+    @apply vs-btn w-full min-w-0;
+  }
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+

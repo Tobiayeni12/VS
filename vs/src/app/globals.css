@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "Mightora";
+  src: url("/fonts/Mightora.woff2") format("woff2"),
+       url("/fonts/Mightora.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+body {
+  @apply bg-slate-950 text-slate-50;
+}
+
+@layer components {
+  .vs-btn {
+    @apply inline-flex min-w-64 items-center justify-center rounded-xl bg-slate-800 px-10 py-3 text-sm font-semibold tracking-wide text-white shadow-lg shadow-black/30 ring-2 ring-emerald-500 transition hover:bg-slate-700 focus:outline-none focus:ring-4 focus:ring-emerald-400/40;
+  }
+
+  .vs-btn-block {
+    @apply vs-btn w-full min-w-0;
+  }
+}
+
