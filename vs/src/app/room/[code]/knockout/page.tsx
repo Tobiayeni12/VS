@@ -331,7 +331,7 @@ export default function KnockoutPage() {
             <hr className="my-4 border-emerald-500/40" />
 
             <h3 className="text-lg font-bold text-emerald-300">
-              Game Wins Leaderboard
+              Tournament Wins Leaderboard
             </h3>
             <div className="max-w-md mx-auto">
               <ul className="space-y-2 text-left">

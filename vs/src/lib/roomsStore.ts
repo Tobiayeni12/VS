@@ -61,6 +61,18 @@ export function setSettings(
 ): RoomState | undefined {
   const room = rooms.get(code);
   if (!room) return undefined;
+  const resettingLobby = room.status !== "settings";
+
+  if (resettingLobby) {
+    room.gamePool = [];
+    room.currentRound = null;
+    room.bracket = null;
+    room.winner = null;
+    room.playerGameCounts = Object.fromEntries(
+      room.players.map((player) => [player.id, 0])
+    );
+  }
+
   room.maxGames = Math.max(2, Math.min(32, maxGames));
   room.maxGamesPerPlayer = Math.max(
     1,
@@ -249,14 +261,13 @@ export function chooseWinner(
       room.status = "finished";
       room.winner = winner;
       matchFound = true;
-    }
-  }
 
-  // Track knockout win
-  const winningGame = room.gamePool.find((g) => g.title === winner);
-  if (winningGame && matchFound) {
-    room.knockoutWins[winningGame.submittedBy] =
-      (room.knockoutWins[winningGame.submittedBy] ?? 0) + 1;
+      const winningGame = room.gamePool.find((g) => g.title === winner);
+      if (winningGame) {
+        room.knockoutWins[winningGame.submittedBy] =
+          (room.knockoutWins[winningGame.submittedBy] ?? 0) + 1;
+      }
+    }
   }
 
   return room;
