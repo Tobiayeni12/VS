@@ -188,11 +188,11 @@ export default function RoomSummaryPage() {
           <ul className="space-y-1 text-sm text-emerald-100 max-h-64 overflow-y-auto">
             {room.gamePool.map((g, i) => (
               <li
-                key={`${g}-${i}`}
+                key={`${g.title}-${i}`}
                 className="flex items-center justify-between rounded border border-emerald-500/30 bg-emerald-950/30 px-3 py-1.5"
               >
                 <span>
-                  {i + 1}. {g}
+                  {i + 1}. {g.title}
                 </span>
                 {isHost && (
                   <button
@@ -202,7 +202,7 @@ export default function RoomSummaryPage() {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({
-                            removeTitle: g,
+                            removeTitle: g.title,
                             playerId,
                           }),
                         });

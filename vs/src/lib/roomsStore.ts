@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { RoomState, Player, Round, Submission, Vote } from "./gameTypes";
+import { RoomState, Player, Round, Submission, Vote, GamePoolEntry } from "./gameTypes";
 
 const rooms: Map<string, RoomState> =
   (globalThis as unknown as { __vsRooms?: Map<string, RoomState> }).__vsRooms ??
@@ -46,6 +46,7 @@ export function createRoom(hostName: string): RoomState {
     playerGameCounts: {
       [host.id]: 0,
     },
+    knockoutWins: {},
   };
 
   rooms.set(code, room);
@@ -90,9 +91,9 @@ export function startKnockout(code: string): RoomState | undefined {
   const roundPairs: string[][] = [];
   for (let i = 0; i < shuffled.length; i += 2) {
     if (i + 1 < shuffled.length) {
-      roundPairs.push([shuffled[i] as string, shuffled[i + 1] as string]);
+      roundPairs.push([shuffled[i]!.title, shuffled[i + 1]!.title]);
     } else {
-      roundPairs.push([shuffled[i] as string]);
+      roundPairs.push([shuffled[i]!.title]);
     }
   }
 
@@ -113,6 +114,13 @@ export function chooseWinner(
   const match = currentRound[room.currentMatchIndex];
   if (!match) return room;
   if (!match.includes(winnerTitle)) return room;
+
+  // Find who submitted the winning game and increment their knockout wins
+  const winningGame = room.gamePool.find((g) => g.title === winnerTitle);
+  if (winningGame) {
+    room.knockoutWins[winningGame.submittedBy] =
+      (room.knockoutWins[winningGame.submittedBy] ?? 0) + 1;
+  }
 
   (currentRound[room.currentMatchIndex] as string[])[0] = winnerTitle;
 

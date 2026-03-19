@@ -4,6 +4,11 @@ export type Player = {
   score: number;
 };
 
+export type GamePoolEntry = {
+  title: string;
+  submittedBy: string;
+};
+
 export type Submission = {
   id: string;
   playerId: string;
@@ -36,10 +41,11 @@ export type RoomState = {
   status: "lobby" | "settings" | "knockout" | "finished";
   maxGames: number;
   maxGamesPerPlayer: number;
-  gamePool: string[];
+  gamePool: GamePoolEntry[];
   knockoutBracket: string[][];
   currentMatchIndex: number;
   winner: string | null;
   playerGameCounts: Record<string, number>;
+  knockoutWins: Record<string, number>;
 };
 

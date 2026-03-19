@@ -33,7 +33,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
     const clean = removeTitle.trim();
     const idx = room.gamePool.findIndex(
-      (g) => g.toLowerCase() === clean.toLowerCase()
+      (g) => g.title.toLowerCase() === clean.toLowerCase()
     );
     if (idx === -1) {
       return NextResponse.json({ error: "Game not found" }, { status: 404 });
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
 
     const duplicate = room.gamePool.some(
-      (g) => g.toLowerCase() === clean.toLowerCase()
+      (g) => g.title.toLowerCase() === clean.toLowerCase()
     );
     if (duplicate) {
       return NextResponse.json(
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
-    room.gamePool.push(clean);
+    room.gamePool.push({ title: clean, submittedBy: playerId });
     room.playerGameCounts[playerId] = currentCount + 1;
 
     return NextResponse.json(room);

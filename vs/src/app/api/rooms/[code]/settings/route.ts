@@ -64,7 +64,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         );
       }
 
-      room.gamePool.push(clean);
+      room.gamePool.push({ title: clean, submittedBy: playerId });
       room.playerGameCounts[playerId] = currentCount + 1;
 
       return NextResponse.json(room);

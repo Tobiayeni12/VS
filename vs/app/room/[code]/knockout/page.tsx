@@ -116,6 +116,30 @@ export default function KnockoutPage() {
                 Restart
               </button>
             )}
+
+            <hr className="my-4 border-emerald-500/40" />
+
+            <h3 className="text-lg font-bold text-emerald-300">Leaderboard</h3>
+            <ul className="space-y-2 text-left">
+              {Object.entries(room.knockoutWins)
+                .map(([playerId, wins]) => {
+                  const player = room.players.find((p) => p.id === playerId);
+                  return {
+                    name: player?.name ?? "Unknown",
+                    wins,
+                  };
+                })
+                .sort((a, b) => b.wins - a.wins)
+                .map((entry, idx) => (
+                  <li
+                    key={idx}
+                    className="flex justify-between rounded border border-emerald-500/30 bg-emerald-950/30 px-3 py-2"
+                  >
+                    <span className="font-semibold">{entry.name}</span>
+                    <span className="text-emerald-300">{entry.wins} win{entry.wins === 1 ? "" : "s"}</span>
+                  </li>
+                ))}
+            </ul>
           </section>
         )}
 

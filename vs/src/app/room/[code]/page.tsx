@@ -178,10 +178,10 @@ export default function RoomLobbyPage() {
           <ul className="space-y-1 text-sm text-emerald-100 max-h-64 overflow-y-auto">
             {room.gamePool.map((g, i) => (
               <li
-                key={`${g}-${i}`}
+                key={`${g.title}-${i}`}
                 className="rounded border border-emerald-500/30 bg-emerald-950/30 px-3 py-1.5"
               >
-                {i + 1}. {g}
+                {i + 1}. {g.title}
               </li>
             ))}
             {room.gamePool.length === 0 && (
