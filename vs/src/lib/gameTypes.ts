@@ -9,6 +9,27 @@ export type GamePoolEntry = {
   submittedBy: string;
 };
 
+export type BracketMatch = {
+  id: string;
+  gameA: string;
+  gameB: string | null;
+  winner: string | null;
+};
+
+export type BracketSide = {
+  rounds: BracketMatch[][];
+  winner: string | null;
+  completed: boolean;
+};
+
+export type TournamentBracket = {
+  left: BracketSide;
+  right: BracketSide;
+  finals: BracketMatch | null;
+  currentPhase: 'left' | 'right' | 'finals' | 'finished';
+  animationComplete: boolean;
+};
+
 export type Submission = {
   id: string;
   playerId: string;
@@ -42,8 +63,7 @@ export type RoomState = {
   maxGames: number;
   maxGamesPerPlayer: number;
   gamePool: GamePoolEntry[];
-  knockoutBracket: string[][];
-  currentMatchIndex: number;
+  bracket: TournamentBracket | null;
   winner: string | null;
   playerGameCounts: Record<string, number>;
   knockoutWins: Record<string, number>;

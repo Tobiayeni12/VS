@@ -24,15 +24,15 @@ export async function POST(req: NextRequest, { params }: Params) {
       return NextResponse.json(room);
     }
     case "chooseWinner": {
-      const winnerTitle =
-        typeof body.winnerTitle === "string" ? body.winnerTitle : "";
-      if (!winnerTitle) {
+      const matchId = typeof body.matchId === "string" ? body.matchId : "";
+      const winner = typeof body.winner === "string" ? body.winner : "";
+      if (!matchId || !winner) {
         return NextResponse.json(
-          { error: "winnerTitle required" },
+          { error: "matchId and winner required" },
           { status: 400 }
         );
       }
-      const room = chooseWinner(code, winnerTitle);
+      const room = chooseWinner(code, matchId, winner);
       if (!room)
         return NextResponse.json({ error: "Room not found" }, { status: 404 });
       return NextResponse.json(room);

@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { RoomState, Player, Round, Submission, Vote, GamePoolEntry } from "./gameTypes";
+import { RoomState, Player, Round, Submission, Vote, GamePoolEntry, BracketMatch, BracketSide, TournamentBracket } from "./gameTypes";
 
 const rooms: Map<string, RoomState> =
   (globalThis as unknown as { __vsRooms?: Map<string, RoomState> }).__vsRooms ??
@@ -40,8 +40,7 @@ export function createRoom(hostName: string): RoomState {
     maxGames: 8,
     maxGamesPerPlayer: 2,
     gamePool: [],
-    knockoutBracket: [],
-    currentMatchIndex: 0,
+    bracket: null,
     winner: null,
     playerGameCounts: {
       [host.id]: 0,
@@ -73,6 +72,49 @@ export function setSettings(
   return room;
 }
 
+function createBracketRounds(games: string[]): BracketMatch[][] {
+  const rounds: BracketMatch[][] = [];
+
+  if (games.length === 0) return rounds;
+
+  // First round: pair up all games
+  const firstRound: BracketMatch[] = [];
+  for (let i = 0; i < games.length; i += 2) {
+    const gameA = games[i]!;
+    const gameB = games[i + 1] ?? null;
+    firstRound.push({
+      id: randomUUID(),
+      gameA,
+      gameB,
+      winner: null,
+    });
+  }
+  rounds.push(firstRound);
+
+  // Subsequent rounds: progressively halve the number of matches
+  let currentRoundMatches = firstRound.length;
+  while (currentRoundMatches > 1) {
+    const nextRound: BracketMatch[] = [];
+    const newCount = Math.ceil(currentRoundMatches / 2);
+    for (let i = 0; i < newCount; i++) {
+      nextRound.push({
+        id: randomUUID(),
+        gameA: "",
+        gameB: null,
+        winner: null,
+      });
+    }
+    rounds.push(nextRound);
+    currentRoundMatches = newCount;
+  }
+
+  return rounds;
+}
+
+export function getRoom(code: string): RoomState | undefined {
+  return rooms.get(code);
+}
+
 function shuffle<T>(arr: T[]): T[] {
   const copy = [...arr];
   for (let i = copy.length - 1; i > 0; i--) {
@@ -87,72 +129,120 @@ export function startKnockout(code: string): RoomState | undefined {
   if (!room) return undefined;
   if (room.gamePool.length < 2) return room;
 
-  const shuffled = shuffle(room.gamePool);
-  const roundPairs: string[][] = [];
-  for (let i = 0; i < shuffled.length; i += 2) {
-    if (i + 1 < shuffled.length) {
-      roundPairs.push([shuffled[i]!.title, shuffled[i + 1]!.title]);
-    } else {
-      roundPairs.push([shuffled[i]!.title]);
-    }
-  }
+  const shuffled = shuffle(room.gamePool.map((g) => g.title));
+  const mid = Math.ceil(shuffled.length / 2);
+  const leftGames = shuffled.slice(0, mid);
+  const rightGames = shuffled.slice(mid);
 
-  room.knockoutBracket = roundPairs;
-  room.currentMatchIndex = 0;
+  const bracket: TournamentBracket = {
+    left: {
+      rounds: createBracketRounds(leftGames),
+      winner: null,
+      completed: false,
+    },
+    right: {
+      rounds: createBracketRounds(rightGames),
+      winner: null,
+      completed: false,
+    },
+    finals: null,
+    currentPhase: "left",
+    animationComplete: false,
+  };
+
+  room.bracket = bracket;
   room.status = "knockout";
   room.winner = null;
   return room;
 }
 
+function advanceInPhase(rounds: BracketMatch[][], matchId: string, winner: string): boolean {
+  for (let roundIdx = 0; roundIdx < rounds.length; roundIdx++) {
+    const round = rounds[roundIdx]!;
+    for (const match of round) {
+      if (match.id === matchId && !match.winner) {
+        match.winner = winner;
+
+        if (roundIdx < rounds.length - 1) {
+          const nextRound = rounds[roundIdx + 1]!;
+          const matchIndexInRound = round.indexOf(match);
+          const nextMatchIndex = Math.floor(matchIndexInRound / 2);
+          const isLeftInNextMatch = matchIndexInRound % 2 === 0;
+
+          const nextMatch = nextRound[nextMatchIndex];
+          if (nextMatch) {
+            if (isLeftInNextMatch) {
+              nextMatch.gameA = winner;
+            } else {
+              nextMatch.gameB = winner;
+            }
+          }
+        }
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 export function chooseWinner(
   code: string,
-  winnerTitle: string
+  matchId: string,
+  winner: string
 ): RoomState | undefined {
   const room = rooms.get(code);
-  if (!room || room.status !== "knockout") return undefined;
-  const currentRound = room.knockoutBracket;
-  const match = currentRound[room.currentMatchIndex];
-  if (!match) return room;
-  if (!match.includes(winnerTitle)) return room;
+  if (!room || !room.bracket || room.status !== "knockout") return undefined;
 
-  // Find who submitted the winning game and increment their knockout wins
-  const winningGame = room.gamePool.find((g) => g.title === winnerTitle);
-  if (winningGame) {
+  const bracket = room.bracket;
+  const { currentPhase } = bracket;
+  let matchFound = false;
+
+  if (currentPhase === "left") {
+    matchFound = advanceInPhase(bracket.left.rounds, matchId, winner);
+    if (matchFound) {
+      const finalRound = bracket.left.rounds[bracket.left.rounds.length - 1];
+      if (finalRound && finalRound.every((m) => m.winner)) {
+        bracket.left.winner = finalRound[0]?.winner || null;
+        bracket.left.completed = true;
+        bracket.currentPhase = "right";
+      }
+    }
+  } else if (currentPhase === "right") {
+    matchFound = advanceInPhase(bracket.right.rounds, matchId, winner);
+    if (matchFound) {
+      const finalRound = bracket.right.rounds[bracket.right.rounds.length - 1];
+      if (finalRound && finalRound.every((m) => m.winner)) {
+        bracket.right.winner = finalRound[0]?.winner || null;
+        bracket.right.completed = true;
+
+        if (bracket.left.winner && bracket.right.winner) {
+          bracket.finals = {
+            id: randomUUID(),
+            gameA: bracket.left.winner,
+            gameB: bracket.right.winner,
+            winner: null,
+          };
+          bracket.currentPhase = "finals";
+        }
+      }
+    }
+  } else if (currentPhase === "finals" && bracket.finals) {
+    if (!bracket.finals.winner && (bracket.finals.gameA === winner || bracket.finals.gameB === winner)) {
+      bracket.finals.winner = winner;
+      room.status = "finished";
+      room.winner = winner;
+      matchFound = true;
+    }
+  }
+
+  // Track knockout win
+  const winningGame = room.gamePool.find((g) => g.title === winner);
+  if (winningGame && matchFound) {
     room.knockoutWins[winningGame.submittedBy] =
       (room.knockoutWins[winningGame.submittedBy] ?? 0) + 1;
   }
 
-  (currentRound[room.currentMatchIndex] as string[])[0] = winnerTitle;
-
-  room.currentMatchIndex += 1;
-
-  if (room.currentMatchIndex >= currentRound.length) {
-    const winners = currentRound.map((m) => m[0]).filter(Boolean) as string[];
-    if (winners.length === 1) {
-      room.status = "finished";
-      room.winner = winners[0] ?? null;
-      return room;
-    }
-
-    const nextRound: string[][] = [];
-    const shuffled = shuffle(winners);
-    for (let i = 0; i < shuffled.length; i += 2) {
-      if (i + 1 < shuffled.length) {
-        nextRound.push([shuffled[i] as string, shuffled[i + 1] as string]);
-      } else {
-        nextRound.push([shuffled[i] as string]);
-      }
-    }
-
-    room.knockoutBracket = nextRound;
-    room.currentMatchIndex = 0;
-  }
-
   return room;
-}
-
-export function getRoom(code: string): RoomState | undefined {
-  return rooms.get(code);
 }
 
 export function joinRoom(code: string, name: string): RoomState | undefined {
