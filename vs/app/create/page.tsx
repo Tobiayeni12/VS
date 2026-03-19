@@ -34,9 +34,17 @@ export default function CreatePage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4">
+    <main className="relative flex min-h-screen flex-col items-center justify-center px-4">
+      <button
+        type="button"
+        onClick={() => router.push("/")}
+        className="absolute left-6 top-6 text-sm font-semibold text-white/90 transition hover:text-green-200"
+        style={{ fontFamily: "Racing, serif" }}
+      >
+        ← Back
+      </button>
       <div className="w-full max-w-md space-y-6">
-        <h1 className="text-3xl font-bold text-center" style={{ fontFamily: "Racing, serif" }}>Create VS</h1>
+        <h1 className="text-3xl font-bold text-center">Create VS</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <label className="block text-sm font-medium text-slate-200">
@@ -55,7 +63,7 @@ export default function CreatePage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-transparent py-2 text-sm font-semibold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)] transition hover:text-slate-300 disabled:opacity-60"
+            className="w-full text-sm font-semibold text-green-300 transition hover:text-green-200 disabled:opacity-60"
           >
             {loading ? "Creating..." : "Create room"}
           </button>
