@@ -2,33 +2,54 @@
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import type { RoomState } from "@/lib/gameTypes";
-import BracketVisualization from "@/components/BracketVisualization";
 
 type ActiveMatch = {
   id: string;
   gameA: string;
   gameB: string;
+  phase: "left" | "right" | "finals";
+  roundIndex: number;
+  matchIndex: number;
 };
 
 function getActiveMatch(room: RoomState): ActiveMatch | null {
   if (!room.bracket) return null;
 
   if (room.bracket.currentPhase === "left") {
-    for (const round of room.bracket.left.rounds) {
-      const match = round.find((m) => !m.winner && m.gameA && m.gameB);
+    for (let roundIndex = 0; roundIndex < room.bracket.left.rounds.length; roundIndex++) {
+      const round = room.bracket.left.rounds[roundIndex]!;
+      const matchIndex = round.findIndex((m) => !m.winner && m.gameA && m.gameB);
+      const match = matchIndex >= 0 ? round[matchIndex] : undefined;
       if (match?.gameB) {
-        return { id: match.id, gameA: match.gameA, gameB: match.gameB };
+        return {
+          id: match.id,
+          gameA: match.gameA,
+          gameB: match.gameB,
+          phase: "left",
+          roundIndex,
+          matchIndex,
+        };
       }
     }
     return null;
   }
 
   if (room.bracket.currentPhase === "right") {
-    for (const round of room.bracket.right.rounds) {
-      const match = round.find((m) => !m.winner && m.gameA && m.gameB);
+    for (let roundIndex = 0; roundIndex < room.bracket.right.rounds.length; roundIndex++) {
+      const round = room.bracket.right.rounds[roundIndex]!;
+      const matchIndex = round.findIndex((m) => !m.winner && m.gameA && m.gameB);
+      const match = matchIndex >= 0 ? round[matchIndex] : undefined;
       if (match?.gameB) {
-        return { id: match.id, gameA: match.gameA, gameB: match.gameB };
+        return {
+          id: match.id,
+          gameA: match.gameA,
+          gameB: match.gameB,
+          phase: "right",
+          roundIndex,
+          matchIndex,
+        };
       }
     }
     return null;
@@ -37,11 +58,60 @@ function getActiveMatch(room: RoomState): ActiveMatch | null {
   if (room.bracket.currentPhase === "finals" && room.bracket.finals) {
     const finals = room.bracket.finals;
     if (!finals.winner && finals.gameA && finals.gameB) {
-      return { id: finals.id, gameA: finals.gameA, gameB: finals.gameB };
+      return {
+        id: finals.id,
+        gameA: finals.gameA,
+        gameB: finals.gameB,
+        phase: "finals",
+        roundIndex: 0,
+        matchIndex: 0,
+      };
     }
   }
 
   return null;
+}
+
+function getStageLabel(room: RoomState, activeMatch: ActiveMatch | null): string {
+  if (!activeMatch) return "Preparing next matchup";
+  if (activeMatch.phase === "finals") return "Final";
+
+  const totalTeams = room.gamePool.length;
+  const teamsInRound = Math.max(2, Math.floor(totalTeams / 2 ** activeMatch.roundIndex));
+
+  if (teamsInRound === 8) return "Quarterfinals";
+  if (teamsInRound === 4) return "Semifinals";
+  if (teamsInRound === 2) return "Final";
+  return `Round of ${teamsInRound}`;
+}
+
+function getMatchLabel(room: RoomState, activeMatch: ActiveMatch | null): string {
+  if (!activeMatch || activeMatch.phase === "finals") return "";
+
+  const leftMatchesInRound =
+    room.bracket?.left.rounds[activeMatch.roundIndex]?.length ?? 0;
+  const globalMatchNumber =
+    activeMatch.phase === "left"
+      ? activeMatch.matchIndex + 1
+      : leftMatchesInRound + activeMatch.matchIndex + 1;
+
+  return `Match ${globalMatchNumber}`;
+}
+
+function getPreviewGames(room: RoomState): string[] {
+  if (!room.bracket) return room.gamePool.map((g) => g.title);
+
+  const titles: string[] = [];
+  for (const match of room.bracket.left.rounds[0] ?? []) {
+    if (match.gameA) titles.push(match.gameA);
+    if (match.gameB) titles.push(match.gameB);
+  }
+  for (const match of room.bracket.right.rounds[0] ?? []) {
+    if (match.gameA) titles.push(match.gameA);
+    if (match.gameB) titles.push(match.gameB);
+  }
+
+  return titles.length > 0 ? titles : room.gamePool.map((g) => g.title);
 }
 
 export default function KnockoutPage() {
@@ -135,6 +205,9 @@ export default function KnockoutPage() {
 
   const showFinished = room.status === "finished";
   const showPreview = !showFinished && showBracketPreview;
+  const stageLabel = getStageLabel(room, activeMatch);
+  const matchLabel = getMatchLabel(room, activeMatch);
+  const previewGames = getPreviewGames(room);
 
   return (
     <main className="flex min-h-screen flex-col items-center px-4 py-6">
@@ -158,37 +231,63 @@ export default function KnockoutPage() {
                 Starting 1v1 in {previewCountdown}...
               </p>
             </div>
-            <BracketVisualization
-              bracket={room.bracket}
-              isHost={false}
-              onMatchClick={() => {}}
-              disabled
-            />
+            <section className="mx-auto w-full max-w-5xl rounded-xl border border-slate-700 bg-slate-900/50 p-5">
+              <h2 className="mb-4 text-center text-lg font-bold text-slate-100">
+                Games Playing In This Bracket
+              </h2>
+              <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {previewGames.map((title, idx) => (
+                  <li
+                    key={`${title}-${idx}`}
+                    className="rounded-md border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm font-semibold text-slate-100"
+                  >
+                    {idx + 1}. {title}
+                  </li>
+                ))}
+              </ul>
+            </section>
           </div>
         ) : !showFinished ? (
-          <section className="mx-auto w-full max-w-2xl rounded-xl border border-slate-700 bg-slate-900/50 p-6 text-center">
+          <section className="mx-auto flex min-h-[76vh] w-full max-w-7xl flex-col justify-center rounded-2xl border border-slate-700 bg-slate-900/50 p-6 text-center sm:p-8">
             {activeMatch ? (
-              <div className="space-y-5">
-                <p className="text-xs uppercase tracking-wider text-slate-400">
-                  Current Match
-                </p>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+              <div className="space-y-8">
+                <div className="space-y-2">
+                  <p className="text-xl font-extrabold uppercase tracking-wide text-green-300 sm:text-3xl">
+                    {stageLabel}
+                  </p>
+                  {matchLabel && (
+                    <p className="text-base font-bold uppercase tracking-wider text-slate-300 sm:text-xl">
+                      {matchLabel}
+                    </p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-[1fr_auto_1fr] sm:items-stretch">
                   <button
                     type="button"
                     disabled={!isHost || choosing}
                     onClick={() => handleMatchClick(activeMatch.id, activeMatch.gameA)}
-                    className="rounded-lg border border-slate-600 bg-slate-800 px-4 py-4 text-lg font-semibold text-slate-100 transition hover:border-green-400 hover:text-green-300 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex min-h-[32vh] w-full items-center justify-center rounded-xl border-2 border-slate-600 bg-slate-800 px-6 py-8 text-3xl font-black text-slate-100 transition hover:border-green-400 hover:text-green-300 sm:text-5xl disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {activeMatch.gameA}
                   </button>
 
-                  <div className="text-sm font-bold text-slate-400">VS</div>
+                  <div className="flex items-center justify-center">
+                    <Image
+                      src="/VSlogo.png"
+                      alt="VS"
+                      width={140}
+                      height={140}
+                      className="h-24 w-24 sm:h-32 sm:w-32"
+                      priority
+                    />
+                  </div>
 
                   <button
                     type="button"
                     disabled={!isHost || choosing}
                     onClick={() => handleMatchClick(activeMatch.id, activeMatch.gameB)}
-                    className="rounded-lg border border-slate-600 bg-slate-800 px-4 py-4 text-lg font-semibold text-slate-100 transition hover:border-green-400 hover:text-green-300 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex min-h-[32vh] w-full items-center justify-center rounded-xl border-2 border-slate-600 bg-slate-800 px-6 py-8 text-3xl font-black text-slate-100 transition hover:border-green-400 hover:text-green-300 sm:text-5xl disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {activeMatch.gameB}
                   </button>
