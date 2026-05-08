@@ -1,44 +1,25 @@
 "use client";
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
-import type { RoomState } from "@/lib/gameTypes";
+import { FormEvent, useState } from "react";
+import { normalizeRoomCode, useRoomPolling } from "@/hooks/useRoomPolling";
 import { youtubeThumbnail, youtubeWatchUrl } from "@/lib/youtube";
 
 export default function RoomLobbyPage() {
   const params = useParams<{ code: string }>();
   const search = useSearchParams();
   const router = useRouter();
-  const code = params.code.toUpperCase();
+  const code = normalizeRoomCode(params.code);
   const playerId = search.get("playerId") ?? "";
   const name = search.get("name") ?? "";
 
-  const [room, setRoom] = useState<RoomState | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { room, setRoom, loading, error, setError } = useRoomPolling({
+    code,
+    pollIntervalMs: 1500,
+  });
+
   const [youtubeInput, setYoutubeInput] = useState("");
   const [adding, setAdding] = useState(false);
-
-  async function fetchState() {
-    try {
-      const res = await fetch(`/api/rooms/${code}/state`);
-      const text = await res.text();
-      const data = text ? JSON.parse(text) : {};
-      if (!res.ok) throw new Error(data.error || "Failed to load room");
-      setRoom(data);
-      setError(null);
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    fetchState();
-    const id = setInterval(fetchState, 1500);
-    return () => clearInterval(id);
-  }, []);
 
   async function handleAddGame(e: FormEvent) {
     e.preventDefault();

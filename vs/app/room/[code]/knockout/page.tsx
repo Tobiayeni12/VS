@@ -3,6 +3,7 @@
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { normalizeRoomCode, useRoomPolling } from "@/hooks/useRoomPolling";
 import type { RoomState } from "@/lib/gameTypes";
 import {
   videoIdsEqual,
@@ -128,36 +129,18 @@ export default function KnockoutPage() {
   const params = useParams<{ code: string }>();
   const search = useSearchParams();
   const router = useRouter();
-  const code = params.code.toUpperCase();
+  const code = normalizeRoomCode(params.code);
   const playerId = search.get("playerId") ?? "";
   const name = search.get("name") ?? "";
 
-  const [room, setRoom] = useState<RoomState | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { room, setRoom, loading, error, setError } = useRoomPolling({
+    code,
+    pollIntervalMs: 2000,
+  });
+
   const [choosing, setChoosing] = useState(false);
   const [showBracketPreview, setShowBracketPreview] = useState(true);
   const [previewCountdown, setPreviewCountdown] = useState(5);
-
-  async function fetchState() {
-    try {
-      const res = await fetch(`/api/rooms/${code}/state`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to load room");
-      setRoom(data);
-      setError(null);
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    fetchState();
-    const id = setInterval(fetchState, 2000);
-    return () => clearInterval(id);
-  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
