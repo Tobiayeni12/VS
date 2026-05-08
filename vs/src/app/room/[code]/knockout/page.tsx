@@ -4,7 +4,11 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import type { RoomState } from "@/lib/gameTypes";
-import { youtubeThumbnail, youtubeWatchUrl } from "@/lib/youtube";
+import {
+  videoIdsEqual,
+  youtubeThumbnail,
+  youtubeWatchUrl,
+} from "@/lib/youtube";
 import { YoutubePickCard } from "@/components/YoutubePickCard";
 
 type ActiveMatch = {
@@ -98,6 +102,10 @@ function getMatchLabel(room: RoomState, activeMatch: ActiveMatch | null): string
       : leftMatchesInRound + activeMatch.matchIndex + 1;
 
   return `Match ${globalMatchNumber}`;
+}
+
+function poolEntryForVideo(room: RoomState, videoId: string) {
+  return room.gamePool.find((g) => videoIdsEqual(g.videoId, videoId));
 }
 
 function getPreviewVideoIds(room: RoomState): string[] {
@@ -210,6 +218,15 @@ export default function KnockoutPage() {
   const stageLabel = getStageLabel(room, activeMatch);
   const matchLabel = getMatchLabel(room, activeMatch);
   const previewVideoIds = getPreviewVideoIds(room);
+  const leftPick = activeMatch
+    ? poolEntryForVideo(room, activeMatch.gameA)
+    : undefined;
+  const rightPick = activeMatch
+    ? poolEntryForVideo(room, activeMatch.gameB)
+    : undefined;
+  const winnerPick = room.winner
+    ? poolEntryForVideo(room, room.winner)
+    : undefined;
 
   return (
     <main className="flex min-h-screen flex-col items-center px-4 py-6">
@@ -238,30 +255,37 @@ export default function KnockoutPage() {
                 Videos in this bracket
               </h2>
               <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {previewVideoIds.map((id, idx) => (
-                  <li
-                    key={`${id}-${idx}`}
-                    className="overflow-hidden rounded-md border border-slate-600 bg-slate-800/80"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={youtubeThumbnail(id)}
-                      alt=""
-                      className="aspect-video w-full object-cover"
-                    />
-                    <div className="flex items-center justify-between gap-2 px-2 py-1.5 text-xs text-slate-200">
-                      <span className="font-semibold">#{idx + 1}</span>
-                      <a
-                        href={youtubeWatchUrl(id)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="truncate text-green-400 hover:underline"
-                      >
-                        YouTube ↗
-                      </a>
-                    </div>
-                  </li>
-                ))}
+                {previewVideoIds.map((id, idx) => {
+                  const g = poolEntryForVideo(room, id);
+                  const vid = g?.videoId ?? id;
+                  return (
+                    <li
+                      key={`${id}-${idx}`}
+                      className="overflow-hidden rounded-md border border-slate-600 bg-slate-800/80"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={g?.thumbnailUrl || youtubeThumbnail(vid)}
+                        alt=""
+                        className="aspect-video w-full object-cover"
+                      />
+                      <div className="space-y-1 px-2 py-2 text-left text-xs text-slate-200">
+                        <span className="font-semibold text-slate-300">#{idx + 1}</span>
+                        <p className="line-clamp-2 text-sm font-medium text-slate-50">
+                          {g?.title ?? "YouTube video"}
+                        </p>
+                        <a
+                          href={youtubeWatchUrl(vid)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block text-green-400 hover:underline"
+                        >
+                          Open on YouTube
+                        </a>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             </section>
           </div>
@@ -285,6 +309,8 @@ export default function KnockoutPage() {
                     videoId={activeMatch.gameA}
                     disabled={!isHost || choosing}
                     onPick={() => handleMatchClick(activeMatch.id, activeMatch.gameA)}
+                    thumbnailUrl={leftPick?.thumbnailUrl}
+                    title={leftPick?.title}
                   />
 
                   <div className="flex items-center justify-center pb-10 sm:self-center sm:pb-0">
@@ -302,6 +328,8 @@ export default function KnockoutPage() {
                     videoId={activeMatch.gameB}
                     disabled={!isHost || choosing}
                     onPick={() => handleMatchClick(activeMatch.id, activeMatch.gameB)}
+                    thumbnailUrl={rightPick?.thumbnailUrl}
+                    title={rightPick?.title}
                   />
                 </div>
 
@@ -325,16 +353,24 @@ export default function KnockoutPage() {
                 <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-emerald-400/50 shadow-lg shadow-black/40">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={youtubeThumbnail(room.winner)}
+                    src={
+                      winnerPick?.thumbnailUrl ||
+                      youtubeThumbnail(winnerPick?.videoId ?? room.winner)
+                    }
                     alt=""
                     className="h-full w-full object-cover"
                   />
                 </div>
+                {winnerPick?.title && (
+                  <p className="text-center text-lg font-semibold text-emerald-50">
+                    {winnerPick.title}
+                  </p>
+                )}
                 <a
-                  href={youtubeWatchUrl(room.winner)}
+                  href={youtubeWatchUrl(winnerPick?.videoId ?? room.winner)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="break-all text-lg font-semibold text-emerald-100 underline underline-offset-2 hover:text-white"
+                  className="text-lg font-semibold text-emerald-100 underline underline-offset-2 hover:text-white"
                 >
                   Open winning clip on YouTube
                 </a>

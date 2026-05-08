@@ -154,8 +154,10 @@ export default function RoomLobbyPage() {
                   className="flex-1 rounded-lg border border-emerald-500/30 bg-emerald-950/30 px-3 py-2 text-sm text-emerald-100 outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400"
                   value={youtubeInput}
                   onChange={(e) => setYoutubeInput(e.target.value)}
-                  placeholder="Paste a YouTube URL or video ID"
+                  placeholder="Paste a YouTube URL…"
                   disabled={listFull || reachedMyLimit}
+                  autoComplete="off"
+                  spellCheck={false}
                 />
                 <button
                   type="submit"
@@ -198,19 +200,22 @@ export default function RoomLobbyPage() {
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={youtubeThumbnail(g.videoId)}
+                  src={g.thumbnailUrl || youtubeThumbnail(g.videoId)}
                   alt=""
-                  className="h-12 w-20 shrink-0 rounded bg-black object-cover"
+                  className="h-14 w-24 shrink-0 rounded bg-black object-cover"
                 />
                 <div className="min-w-0 flex-1 text-xs leading-tight text-emerald-100">
-                  <span className="font-semibold">#{i + 1}</span>
+                  <span className="font-semibold text-emerald-200">#{i + 1}</span>
+                  <p className="mt-0.5 line-clamp-2 text-sm font-medium text-emerald-50">
+                    {g.title || "YouTube video"}
+                  </p>
                   <a
                     href={youtubeWatchUrl(g.videoId)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-1 block truncate text-green-300 hover:underline"
+                    className="mt-0.5 inline-block truncate text-[11px] text-green-300/90 hover:underline"
                   >
-                    youtube.com/watch?v={g.videoId}
+                    Open on YouTube
                   </a>
                 </div>
               </li>

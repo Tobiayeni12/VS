@@ -177,8 +177,10 @@ export default function RoomSummaryPage() {
                 className="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-50 outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400"
                 value={youtubeInput}
                 onChange={(e) => setYoutubeInput(e.target.value)}
-                placeholder="Paste a YouTube URL or ID"
+                placeholder="Paste a YouTube URL…"
                 disabled={room.gamePool.length >= room.maxGames}
+                autoComplete="off"
+                spellCheck={false}
               />
               <button
                 type="submit"
@@ -205,19 +207,22 @@ export default function RoomSummaryPage() {
                 <span className="flex min-w-0 flex-1 gap-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={youtubeThumbnail(g.videoId)}
+                    src={g.thumbnailUrl || youtubeThumbnail(g.videoId)}
                     alt=""
-                    className="h-10 w-16 shrink-0 rounded bg-black object-cover"
+                    className="h-12 w-20 shrink-0 rounded bg-black object-cover"
                   />
                   <span className="min-w-0 flex flex-col justify-center gap-0.5 text-emerald-100">
-                    <span className="text-xs font-semibold">#{i + 1}</span>
+                    <span className="text-xs font-semibold text-emerald-200">#{i + 1}</span>
+                    <span className="line-clamp-2 text-sm font-medium text-emerald-50">
+                      {g.title || "YouTube video"}
+                    </span>
                     <a
                       href={youtubeWatchUrl(g.videoId)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="truncate text-xs text-green-300 hover:underline"
+                      className="truncate text-[11px] text-green-300 hover:underline"
                     >
-                      youtube.com/watch?v={g.videoId}
+                      Open on YouTube
                     </a>
                   </span>
                 </span>

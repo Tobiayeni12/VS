@@ -4,9 +4,11 @@ export type Player = {
   score: number;
 };
 
-/** YouTube-backed entry; bracket match strings store the same canonical video id */
+/** YouTube-backed entry; bracket match strings store the same video id */
 export type GamePoolEntry = {
   videoId: string;
+  title: string;
+  thumbnailUrl: string;
   submittedBy: string;
 };
 

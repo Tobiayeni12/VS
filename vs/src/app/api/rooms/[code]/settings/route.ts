@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { setSettings, getRoom, markHostReady } from "@/lib/roomsStore";
-import { parseYouTubeVideoId } from "@/lib/youtube";
+import {
+  fetchYoutubeMetadata,
+  parseYouTubeVideoId,
+  videoIdsEqual,
+} from "@/lib/youtube";
 
 type Params = {
   params: {
@@ -74,10 +78,10 @@ export async function POST(req: NextRequest, { params }: Params) {
       }
 
       const targetId =
-        parseYouTubeVideoId(removeCandidate) ?? removeCandidate.toLowerCase();
+        parseYouTubeVideoId(removeCandidate) ?? removeCandidate;
 
-      const idx = roomForRemove.gamePool.findIndex(
-        (g) => g.videoId.toLowerCase() === targetId
+      const idx = roomForRemove.gamePool.findIndex((g) =>
+        videoIdsEqual(g.videoId, targetId)
       );
       if (idx === -1) {
         return NextResponse.json({ error: "Video not found in list" }, { status: 404 });
@@ -149,16 +153,20 @@ export async function POST(req: NextRequest, { params }: Params) {
         );
       }
 
-      if (
-        room.gamePool.some((g) => g.videoId.toLowerCase() === videoId.toLowerCase())
-      ) {
+      if (room.gamePool.some((g) => videoIdsEqual(g.videoId, videoId))) {
         return NextResponse.json(
           { error: "That video is already in the list" },
           { status: 400 }
         );
       }
 
-      room.gamePool.push({ videoId: videoId.toLowerCase(), submittedBy: playerId });
+      const meta = await fetchYoutubeMetadata(videoId);
+      room.gamePool.push({
+        videoId,
+        title: meta.title,
+        thumbnailUrl: meta.thumbnailUrl,
+        submittedBy: playerId,
+      });
       room.playerGameCounts[playerId] = currentCount + 1;
 
       return NextResponse.json(room);

@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { RoomState, Player, Round, Submission, Vote, GamePoolEntry, BracketMatch, BracketSide, TournamentBracket } from "./gameTypes";
+import { videoIdsEqual } from "./youtube";
 
 const rooms: Map<string, RoomState> =
   (globalThis as unknown as { __vsRooms?: Map<string, RoomState> }).__vsRooms ??
@@ -324,7 +325,7 @@ export function chooseWinner(
       room.winner = winner;
       matchFound = true;
 
-      const winningGame = room.gamePool.find((g) => g.videoId === winner);
+      const winningGame = room.gamePool.find((g) => videoIdsEqual(g.videoId, winner));
       if (winningGame) {
         room.knockoutWins[winningGame.submittedBy] =
           (room.knockoutWins[winningGame.submittedBy] ?? 0) + 1;
