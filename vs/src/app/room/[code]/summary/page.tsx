@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import type { RoomState } from "@/lib/gameTypes";
 import { youtubeThumbnail, youtubeWatchUrl } from "@/lib/youtube";
 
@@ -20,7 +20,7 @@ export default function RoomSummaryPage() {
   const [adding, setAdding] = useState(false);
   const [starting, setStarting] = useState(false);
 
-  async function fetchState() {
+  const fetchState = useCallback(async () => {
     try {
       const res = await fetch(`/api/rooms/${code}/state`);
       const text = await res.text();
@@ -33,11 +33,13 @@ export default function RoomSummaryPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [code]);
 
   useEffect(() => {
     fetchState();
-  }, []);
+    const id = setInterval(fetchState, 1500);
+    return () => clearInterval(id);
+  }, [fetchState]);
 
   useEffect(() => {
     const isHost = Boolean(playerId && room && room.hostId === playerId);
