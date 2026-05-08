@@ -74,7 +74,6 @@ export default function RoomSettingsPage() {
         type="button"
         onClick={() => router.push(summaryHref)}
         className="absolute left-6 top-6 text-sm font-semibold text-white/90 transition hover:text-green-200"
-        style={{ fontFamily: "Racing, serif" }}
       >
         ← Back
       </button>
@@ -92,7 +91,7 @@ export default function RoomSettingsPage() {
         >
           <div className="space-y-2">
             <label className="block text-sm font-medium text-green-100">
-              How many games should participate in this VS?
+              How many YouTube clips should be in this VS?
             </label>
             <select
               className="w-full rounded-lg border border-emerald-500/30 bg-emerald-950/30 px-3 py-2 text-sm text-emerald-100 outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400"
@@ -109,7 +108,7 @@ export default function RoomSettingsPage() {
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-green-100">
-              How many games can each player play?
+              How many clips can each player submit?
             </label>
             <select
               className="w-full rounded-lg border border-emerald-500/30 bg-emerald-950/30 px-3 py-2 text-sm text-emerald-100 outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400"
@@ -123,8 +122,8 @@ export default function RoomSettingsPage() {
               ))}
             </select>
             <p className="text-xs text-emerald-200/80">
-              This limits how many different games each person can bring into the
-              VS.
+              Each player pastes that many YouTube links before the knockout
+              starts.
             </p>
           </div>
 

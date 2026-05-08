@@ -1,8 +1,9 @@
 "use client";
 
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import type { RoomState } from "@/lib/gameTypes";
+import { youtubeThumbnail, youtubeWatchUrl } from "@/lib/youtube";
 
 export default function RoomSummaryPage() {
   const params = useParams<{ code: string }>();
@@ -15,6 +16,8 @@ export default function RoomSummaryPage() {
   const [room, setRoom] = useState<RoomState | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [youtubeInput, setYoutubeInput] = useState("");
+  const [adding, setAdding] = useState(false);
   const [starting, setStarting] = useState(false);
 
   async function fetchState() {
@@ -47,6 +50,33 @@ export default function RoomSummaryPage() {
     }).catch(() => undefined);
   }, [code, playerId, room?.hostId]);
 
+  async function handleAddGame(e: FormEvent) {
+    e.preventDefault();
+    if (!youtubeInput.trim()) return;
+    if (!playerId) {
+      setError("Join the room to add videos.");
+      return;
+    }
+    setAdding(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/rooms/${code}/settings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ youtubeUrl: youtubeInput.trim(), playerId }),
+      });
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : {};
+      if (!res.ok) throw new Error(data.error || "Failed to add video");
+      setRoom(data);
+      setYoutubeInput("");
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setAdding(false);
+    }
+  }
+
   async function handleStart() {
     setStarting(true);
     setError(null);
@@ -56,13 +86,14 @@ export default function RoomSummaryPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "startKnockout" }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to start game");
-      const params = new URLSearchParams({
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : {};
+      if (!res.ok) throw new Error(data.error || "Failed to start knockout");
+      const qp = new URLSearchParams({
         playerId,
         name,
       });
-      router.push(`/room/${code}/knockout?${params.toString()}`);
+      router.push(`/room/${code}/knockout?${qp.toString()}`);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -88,6 +119,7 @@ export default function RoomSummaryPage() {
 
   const gamesRemaining = room.maxGames - room.gamePool.length;
   const isHost = room.hostId === playerId;
+  const canAddGames = Boolean(playerId) && !isHost && room.status === "settings";
   const settingsHref = `/room/${code}/settings?${new URLSearchParams({
     playerId,
     name,
@@ -99,7 +131,6 @@ export default function RoomSummaryPage() {
         type="button"
         onClick={() => router.push(settingsHref)}
         className="absolute left-6 top-6 text-sm font-semibold text-white/90 transition hover:text-green-200"
-        style={{ fontFamily: "Racing, serif" }}
       >
         ← Back
       </button>
@@ -119,11 +150,11 @@ export default function RoomSummaryPage() {
               <span className="font-semibold">{room.vsTitle || "Untitled VS"}</span>
             </li>
             <li>
-              Total games in this VS:{" "}
+              Total slots in this VS:{" "}
               <span className="font-semibold">{room.maxGames}</span>
             </li>
             <li>
-              Max games per player:{" "}
+              Max videos per player:{" "}
               <span className="font-semibold">{room.maxGamesPerPlayer}</span>
             </li>
           </ul>
@@ -131,20 +162,64 @@ export default function RoomSummaryPage() {
 
         <section className="rounded-xl border border-emerald-500/40 bg-emerald-950/40 p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-green-100">Games list</h2>
+            <h2 className="text-lg font-semibold text-green-100">Video list</h2>
             <p className="text-xs text-emerald-200/80">
-              {room.gamePool.length} / {room.maxGames} games added
+              {room.gamePool.length} / {room.maxGames} clips added
             </p>
           </div>
+
+          {canAddGames ? (
+            <form
+              onSubmit={handleAddGame}
+              className="flex flex-col gap-2 sm:flex-row"
+            >
+              <input
+                className="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-50 outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400"
+                value={youtubeInput}
+                onChange={(e) => setYoutubeInput(e.target.value)}
+                placeholder="Paste a YouTube URL or ID"
+                disabled={room.gamePool.length >= room.maxGames}
+              />
+              <button
+                type="submit"
+                disabled={adding || room.gamePool.length >= room.maxGames}
+                className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-60"
+              >
+                {adding ? "Adding..." : "Add"}
+              </button>
+            </form>
+          ) : (
+            <p className="text-xs text-emerald-200/80">
+              {isHost
+                ? "Host view: only players who join with the code can add videos."
+                : "Join the room to add videos."}
+            </p>
+          )}
 
           <ul className="space-y-1 text-sm text-emerald-100 max-h-64 overflow-y-auto">
             {room.gamePool.map((g, i) => (
               <li
-                key={`${g.title}-${i}`}
-                className="flex items-center justify-between rounded border border-emerald-500/30 bg-emerald-950/30 px-3 py-1.5"
+                key={`${g.videoId}-${i}`}
+                className="flex items-center justify-between gap-2 rounded border border-emerald-500/30 bg-emerald-950/30 px-2 py-1.5"
               >
-                <span>
-                  {i + 1}. {g.title}
+                <span className="flex min-w-0 flex-1 gap-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={youtubeThumbnail(g.videoId)}
+                    alt=""
+                    className="h-10 w-16 shrink-0 rounded bg-black object-cover"
+                  />
+                  <span className="min-w-0 flex flex-col justify-center gap-0.5 text-emerald-100">
+                    <span className="text-xs font-semibold">#{i + 1}</span>
+                    <a
+                      href={youtubeWatchUrl(g.videoId)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="truncate text-xs text-green-300 hover:underline"
+                    >
+                      youtube.com/watch?v={g.videoId}
+                    </a>
+                  </span>
                 </span>
                 {isHost && (
                   <button
@@ -154,7 +229,7 @@ export default function RoomSummaryPage() {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({
-                            removeTitle: g.title,
+                            removeVideoId: g.videoId,
                             playerId,
                           }),
                         });
@@ -168,8 +243,6 @@ export default function RoomSummaryPage() {
                       }
                     }}
                     className="ml-3 text-xs text-slate-500 hover:text-red-400"
-                    aria-label={`Remove ${g.title}`}
-                    title="Remove"
                   >
                     ×
                   </button>
@@ -178,15 +251,15 @@ export default function RoomSummaryPage() {
             ))}
             {room.gamePool.length === 0 && (
               <li className="text-xs text-emerald-200/80">
-                No games added yet. Add at least 2 to start.
+                No clips added yet. Add at least two YouTube videos to start.
               </li>
             )}
           </ul>
 
           {gamesRemaining > 0 && (
             <p className="text-xs text-emerald-200/80">
-              Add {gamesRemaining} more game{gamesRemaining === 1 ? "" : "s"} to
-              reach the max.
+              Add {gamesRemaining} more clip{gamesRemaining === 1 ? "" : "s"} to reach
+              the max.
             </p>
           )}
         </section>
@@ -198,7 +271,7 @@ export default function RoomSummaryPage() {
           disabled={starting || room.gamePool.length < 2}
           className="w-full rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(0,0,0,0.35)] transition hover:bg-slate-700 hover:ring-2 hover:ring-green-400/70 hover:shadow-[0_0_14px_rgba(74,222,128,0.35)] disabled:opacity-60"
         >
-          {starting ? "Starting..." : "Start game"}
+          {starting ? "Starting..." : "Start knockout"}
         </button>
       </div>
     </main>

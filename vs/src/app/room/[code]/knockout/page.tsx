@@ -4,6 +4,8 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import type { RoomState } from "@/lib/gameTypes";
+import { youtubeThumbnail, youtubeWatchUrl } from "@/lib/youtube";
+import { YoutubePickCard } from "@/components/YoutubePickCard";
 
 type ActiveMatch = {
   id: string;
@@ -98,20 +100,20 @@ function getMatchLabel(room: RoomState, activeMatch: ActiveMatch | null): string
   return `Match ${globalMatchNumber}`;
 }
 
-function getPreviewGames(room: RoomState): string[] {
-  if (!room.bracket) return room.gamePool.map((g) => g.title);
+function getPreviewVideoIds(room: RoomState): string[] {
+  if (!room.bracket) return room.gamePool.map((g) => g.videoId);
 
-  const titles: string[] = [];
+  const ids: string[] = [];
   for (const match of room.bracket.left.rounds[0] ?? []) {
-    if (match.gameA) titles.push(match.gameA);
-    if (match.gameB) titles.push(match.gameB);
+    if (match.gameA) ids.push(match.gameA);
+    if (match.gameB) ids.push(match.gameB);
   }
   for (const match of room.bracket.right.rounds[0] ?? []) {
-    if (match.gameA) titles.push(match.gameA);
-    if (match.gameB) titles.push(match.gameB);
+    if (match.gameA) ids.push(match.gameA);
+    if (match.gameB) ids.push(match.gameB);
   }
 
-  return titles.length > 0 ? titles : room.gamePool.map((g) => g.title);
+  return ids.length > 0 ? ids : room.gamePool.map((g) => g.videoId);
 }
 
 export default function KnockoutPage() {
@@ -207,7 +209,7 @@ export default function KnockoutPage() {
   const showPreview = !showFinished && showBracketPreview;
   const stageLabel = getStageLabel(room, activeMatch);
   const matchLabel = getMatchLabel(room, activeMatch);
-  const previewGames = getPreviewGames(room);
+  const previewVideoIds = getPreviewVideoIds(room);
 
   return (
     <main className="flex min-h-screen flex-col items-center px-4 py-6">
@@ -233,15 +235,31 @@ export default function KnockoutPage() {
             </div>
             <section className="mx-auto w-full max-w-5xl rounded-xl border border-slate-700 bg-slate-900/50 p-5">
               <h2 className="mb-4 text-center text-lg font-bold text-slate-100">
-                Games Playing In This Bracket
+                Videos in this bracket
               </h2>
-              <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {previewGames.map((title, idx) => (
+              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {previewVideoIds.map((id, idx) => (
                   <li
-                    key={`${title}-${idx}`}
-                    className="rounded-md border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm font-semibold text-slate-100"
+                    key={`${id}-${idx}`}
+                    className="overflow-hidden rounded-md border border-slate-600 bg-slate-800/80"
                   >
-                    {idx + 1}. {title}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={youtubeThumbnail(id)}
+                      alt=""
+                      className="aspect-video w-full object-cover"
+                    />
+                    <div className="flex items-center justify-between gap-2 px-2 py-1.5 text-xs text-slate-200">
+                      <span className="font-semibold">#{idx + 1}</span>
+                      <a
+                        href={youtubeWatchUrl(id)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="truncate text-green-400 hover:underline"
+                      >
+                        YouTube ↗
+                      </a>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -262,17 +280,14 @@ export default function KnockoutPage() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-[1fr_auto_1fr] sm:items-stretch">
-                  <button
-                    type="button"
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-[1fr_auto_1fr] sm:items-end">
+                  <YoutubePickCard
+                    videoId={activeMatch.gameA}
                     disabled={!isHost || choosing}
-                    onClick={() => handleMatchClick(activeMatch.id, activeMatch.gameA)}
-                    className="flex min-h-[32vh] w-full items-center justify-center rounded-xl border-2 border-slate-600 bg-slate-800 px-6 py-8 text-3xl font-black text-slate-100 transition hover:border-green-400 hover:text-green-300 sm:text-5xl disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {activeMatch.gameA}
-                  </button>
+                    onPick={() => handleMatchClick(activeMatch.id, activeMatch.gameA)}
+                  />
 
-                  <div className="flex items-center justify-center">
+                  <div className="flex items-center justify-center pb-10 sm:self-center sm:pb-0">
                     <Image
                       src="/VSlogo.png"
                       alt="VS"
@@ -283,14 +298,11 @@ export default function KnockoutPage() {
                     />
                   </div>
 
-                  <button
-                    type="button"
+                  <YoutubePickCard
+                    videoId={activeMatch.gameB}
                     disabled={!isHost || choosing}
-                    onClick={() => handleMatchClick(activeMatch.id, activeMatch.gameB)}
-                    className="flex min-h-[32vh] w-full items-center justify-center rounded-xl border-2 border-slate-600 bg-slate-800 px-6 py-8 text-3xl font-black text-slate-100 transition hover:border-green-400 hover:text-green-300 sm:text-5xl disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {activeMatch.gameB}
-                  </button>
+                    onPick={() => handleMatchClick(activeMatch.id, activeMatch.gameB)}
+                  />
                 </div>
 
                 {!isHost && (
@@ -308,9 +320,26 @@ export default function KnockoutPage() {
             <h2 className="text-xl font-bold text-emerald-300">
               Tournament Champion
             </h2>
-            <p className="text-3xl font-extrabold text-emerald-200">
-              {room.winner}
-            </p>
+            {room.winner && (
+              <div className="mx-auto mt-2 flex w-full max-w-md flex-col items-center gap-3">
+                <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-emerald-400/50 shadow-lg shadow-black/40">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={youtubeThumbnail(room.winner)}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <a
+                  href={youtubeWatchUrl(room.winner)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="break-all text-lg font-semibold text-emerald-100 underline underline-offset-2 hover:text-white"
+                >
+                  Open winning clip on YouTube
+                </a>
+              </div>
+            )}
 
             {isHost && (
               <button

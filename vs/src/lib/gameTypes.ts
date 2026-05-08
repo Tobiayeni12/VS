@@ -4,8 +4,9 @@ export type Player = {
   score: number;
 };
 
+/** YouTube-backed entry; bracket match strings store the same canonical video id */
 export type GamePoolEntry = {
-  title: string;
+  videoId: string;
   submittedBy: string;
 };
 

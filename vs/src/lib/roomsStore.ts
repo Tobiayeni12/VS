@@ -180,7 +180,7 @@ export function startKnockout(code: string): RoomState | undefined {
   if (!room) return undefined;
   if (room.gamePool.length < 2) return room;
 
-  const shuffled = shuffle(room.gamePool.map((g) => g.title));
+  const shuffled = shuffle(room.gamePool.map((g) => g.videoId));
   const mid = Math.ceil(shuffled.length / 2);
   const leftGames = shuffled.slice(0, mid);
   const rightGames = shuffled.slice(mid);
@@ -324,7 +324,7 @@ export function chooseWinner(
       room.winner = winner;
       matchFound = true;
 
-      const winningGame = room.gamePool.find((g) => g.title === winner);
+      const winningGame = room.gamePool.find((g) => g.videoId === winner);
       if (winningGame) {
         room.knockoutWins[winningGame.submittedBy] =
           (room.knockoutWins[winningGame.submittedBy] ?? 0) + 1;

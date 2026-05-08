@@ -55,7 +55,7 @@ body {
   background-size: 400% 400%;
   animation: gradient 15s ease infinite;
   color: #d1fae5;
-  font-family: "Racing", Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-roboto), ui-sans-serif, system-ui, sans-serif;
   min-height: 100vh;
 }
 
@@ -64,7 +64,7 @@ body {
   .btn-font,
   .vs-btn,
   .vs-btn-block {
-    font-family: "NauticaRoundedRegular", Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: var(--font-roboto), ui-sans-serif, system-ui, sans-serif;
   }
 
   .vs-btn {

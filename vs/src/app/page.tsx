@@ -15,7 +15,7 @@ export default function HomePage() {
         </div>
 
         <div className="w-full md:w-1/2 flex flex-col items-center md:items-start gap-6">
-          <p className="max-w-md text-center md:text-left text-3xl leading-none tracking-tight text-slate-200" style={{ fontFamily: "Mightora, system-ui" }}>
+          <p className="max-w-md text-center md:text-left text-3xl leading-none tracking-tight text-slate-200">
             Pick. VS. Repeat.
           </p>
 

@@ -42,7 +42,6 @@ export default function JoinPage() {
         type="button"
         onClick={() => router.push("/")}
         className="absolute left-6 top-6 text-sm font-semibold text-white/90 transition hover:text-green-200"
-        style={{ fontFamily: "Racing, serif" }}
       >
         ← Back
       </button>
