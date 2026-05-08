@@ -56,7 +56,7 @@ export default function RoomSummaryPage() {
     e.preventDefault();
     if (!youtubeInput.trim()) return;
     if (!playerId) {
-      setError("Join the room to add videos.");
+      setError("Join the room to add games.");
       return;
     }
     setAdding(true);
@@ -69,7 +69,7 @@ export default function RoomSummaryPage() {
       });
       const text = await res.text();
       const data = text ? JSON.parse(text) : {};
-      if (!res.ok) throw new Error(data.error || "Failed to add video");
+      if (!res.ok) throw new Error(data.error || "Failed to add game");
       setRoom(data);
       setYoutubeInput("");
     } catch (err) {
@@ -152,11 +152,11 @@ export default function RoomSummaryPage() {
               <span className="font-semibold">{room.vsTitle || "Untitled VS"}</span>
             </li>
             <li>
-              Total slots in this VS:{" "}
+              Total games in this VS:{" "}
               <span className="font-semibold">{room.maxGames}</span>
             </li>
             <li>
-              Max videos per player:{" "}
+              Max games per player:{" "}
               <span className="font-semibold">{room.maxGamesPerPlayer}</span>
             </li>
           </ul>
@@ -164,9 +164,9 @@ export default function RoomSummaryPage() {
 
         <section className="rounded-xl border border-emerald-500/40 bg-emerald-950/40 p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-green-100">Video list</h2>
+            <h2 className="text-lg font-semibold text-green-100">Games list</h2>
             <p className="text-xs text-emerald-200/80">
-              {room.gamePool.length} / {room.maxGames} clips added
+              {room.gamePool.length} / {room.maxGames} games added
             </p>
           </div>
 
@@ -195,8 +195,8 @@ export default function RoomSummaryPage() {
           ) : (
             <p className="text-xs text-emerald-200/80">
               {isHost
-                ? "Host view: only players who join with the code can add videos."
-                : "Join the room to add videos."}
+                ? "Host view: only players who join with the code can add games."
+                : "Join the room to add games."}
             </p>
           )}
 
@@ -216,7 +216,7 @@ export default function RoomSummaryPage() {
                   <span className="min-w-0 flex flex-col justify-center gap-0.5 text-emerald-100">
                     <span className="text-xs font-semibold text-emerald-200">#{i + 1}</span>
                     <span className="line-clamp-2 text-sm font-medium text-emerald-50">
-                      {g.title || "YouTube video"}
+                      {g.title || "Game"}
                     </span>
                     <a
                       href={youtubeWatchUrl(g.videoId)}
@@ -258,14 +258,14 @@ export default function RoomSummaryPage() {
             ))}
             {room.gamePool.length === 0 && (
               <li className="text-xs text-emerald-200/80">
-                No clips added yet. Add at least two YouTube videos to start.
+                No games added yet. Add at least two to start.
               </li>
             )}
           </ul>
 
           {gamesRemaining > 0 && (
             <p className="text-xs text-emerald-200/80">
-              Add {gamesRemaining} more clip{gamesRemaining === 1 ? "" : "s"} to reach
+              Add {gamesRemaining} more game{gamesRemaining === 1 ? "" : "s"} to reach
               the max.
             </p>
           )}

@@ -91,7 +91,7 @@ export default function RoomSettingsPage() {
         >
           <div className="space-y-2">
             <label className="block text-sm font-medium text-green-100">
-              How many YouTube clips should be in this VS?
+              How many games should be in this VS?
             </label>
             <select
               className="w-full rounded-lg border border-emerald-500/30 bg-emerald-950/30 px-3 py-2 text-sm text-emerald-100 outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400"
@@ -108,7 +108,7 @@ export default function RoomSettingsPage() {
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-green-100">
-              How many clips can each player submit?
+              How many games can each player submit?
             </label>
             <select
               className="w-full rounded-lg border border-emerald-500/30 bg-emerald-950/30 px-3 py-2 text-sm text-emerald-100 outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400"
@@ -122,8 +122,8 @@ export default function RoomSettingsPage() {
               ))}
             </select>
             <p className="text-xs text-emerald-200/80">
-              Each player pastes that many YouTube links before the knockout
-              starts.
+              Each player submits that many games (via YouTube link) before the
+              knockout starts.
             </p>
           </div>
 

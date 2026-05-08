@@ -252,7 +252,7 @@ export default function KnockoutPage() {
             </div>
             <section className="mx-auto w-full max-w-5xl rounded-xl border border-slate-700 bg-slate-900/50 p-5">
               <h2 className="mb-4 text-center text-lg font-bold text-slate-100">
-                Videos in this bracket
+                Games in this bracket
               </h2>
               <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {previewVideoIds.map((id, idx) => {
@@ -272,7 +272,7 @@ export default function KnockoutPage() {
                       <div className="space-y-1 px-2 py-2 text-left text-xs text-slate-200">
                         <span className="font-semibold text-slate-300">#{idx + 1}</span>
                         <p className="line-clamp-2 text-sm font-medium text-slate-50">
-                          {g?.title ?? "YouTube video"}
+                          {g?.title ?? "Game"}
                         </p>
                         <a
                           href={youtubeWatchUrl(vid)}
@@ -372,7 +372,7 @@ export default function KnockoutPage() {
                   rel="noopener noreferrer"
                   className="text-lg font-semibold text-emerald-100 underline underline-offset-2 hover:text-white"
                 >
-                  Open winning clip on YouTube
+                  Open winning game on YouTube
                 </a>
               </div>
             )}

@@ -44,7 +44,7 @@ export default function RoomLobbyPage() {
     e.preventDefault();
     if (!youtubeInput.trim()) return;
     if (!playerId) {
-      setError("Join the room to add videos.");
+      setError("Join the room to add games.");
       return;
     }
     setAdding(true);
@@ -57,7 +57,7 @@ export default function RoomLobbyPage() {
       });
       const text = await res.text();
       const data = text ? JSON.parse(text) : {};
-      if (!res.ok) throw new Error(data.error || "Failed to add video");
+      if (!res.ok) throw new Error(data.error || "Failed to add game");
       setRoom(data);
       setYoutubeInput("");
     } catch (err) {
@@ -128,21 +128,21 @@ export default function RoomLobbyPage() {
               <span className="font-semibold">{room.vsTitle || "Untitled VS"}</span>
             </li>
             <li>
-              Total slots in this VS:{" "}
+              Total games in this VS:{" "}
               <span className="font-semibold">{room.maxGames}</span>
             </li>
             <li>
-              Max videos per player:{" "}
+              Max games per player:{" "}
               <span className="font-semibold">{room.maxGamesPerPlayer}</span>
             </li>
           </ul>
         </section>
 
         <section className="rounded-xl border border-emerald-500/40 bg-emerald-950/40 p-4 space-y-3">
-          <h2 className="text-lg font-semibold text-green-100">Add YouTube clips</h2>
+          <h2 className="text-lg font-semibold text-green-100">Add games</h2>
           {waitingForHostSummary ? (
             <p className="text-xs text-emerald-200/80">
-              Video submissions are locked until the host opens VS Summary.
+              Game submissions are locked until the host opens VS Summary.
             </p>
           ) : canAddGames ? (
             <>
@@ -169,7 +169,7 @@ export default function RoomLobbyPage() {
               </form>
               <p className="text-xs text-emerald-200/80">
                 You can add{" "}
-                <span className="font-semibold">{myRemaining}</span> more video
+                <span className="font-semibold">{myRemaining}</span> more game
                 {myRemaining === 1 ? "" : "s"}. Total list:{" "}
                 {room.gamePool.length} / {room.maxGames}.
               </p>
@@ -177,17 +177,17 @@ export default function RoomLobbyPage() {
           ) : (
             <p className="text-xs text-emerald-200/80">
               {hasStarted
-                ? "The VS has started, so no more videos can be added."
+                ? "The VS has started, so no more games can be added."
                 : isHost
                 ? "Host view is managed from the settings/summary screens."
-                : "Join VS with a name to add videos."}
+                : "Join VS with a name to add games."}
             </p>
           )}
         </section>
 
         <section className="rounded-xl border border-emerald-500/40 bg-emerald-950/40 p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-green-100">Videos in this VS</h2>
+            <h2 className="text-lg font-semibold text-green-100">Games in this VS</h2>
             <p className="text-xs text-emerald-200/80">
               {room.gamePool.length} / {room.maxGames}
             </p>
@@ -207,7 +207,7 @@ export default function RoomLobbyPage() {
                 <div className="min-w-0 flex-1 text-xs leading-tight text-emerald-100">
                   <span className="font-semibold text-emerald-200">#{i + 1}</span>
                   <p className="mt-0.5 line-clamp-2 text-sm font-medium text-emerald-50">
-                    {g.title || "YouTube video"}
+                    {g.title || "Game"}
                   </p>
                   <a
                     href={youtubeWatchUrl(g.videoId)}
@@ -222,7 +222,7 @@ export default function RoomLobbyPage() {
             ))}
             {room.gamePool.length === 0 && (
               <li className="text-xs text-emerald-200/80">
-                No clips yet. Paste YouTube links in the box above.
+                No games yet. Paste a YouTube link for each game in the box above.
               </li>
             )}
           </ul>

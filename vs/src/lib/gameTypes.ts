@@ -4,7 +4,7 @@ export type Player = {
   score: number;
 };
 
-/** YouTube-backed entry; bracket match strings store the same video id */
+/** Each game is backed by a YouTube link; bracket stores matching video ids */
 export type GamePoolEntry = {
   videoId: string;
   title: string;

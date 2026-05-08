@@ -84,7 +84,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         videoIdsEqual(g.videoId, targetId)
       );
       if (idx === -1) {
-        return NextResponse.json({ error: "Video not found in list" }, { status: 404 });
+        return NextResponse.json({ error: "Game not found in list" }, { status: 404 });
       }
 
       const [removed] = roomForRemove.gamePool.splice(idx, 1);
@@ -113,19 +113,19 @@ export async function POST(req: NextRequest, { params }: Params) {
       }
       if (room.status !== "settings") {
         return NextResponse.json(
-          { error: "Cannot add videos after the VS has started" },
+          { error: "Cannot add games after the VS has started" },
           { status: 400 }
         );
       }
       if (!playerId) {
         return NextResponse.json(
-          { error: "playerId required to add videos" },
+          { error: "playerId required to add games" },
           { status: 400 }
         );
       }
       if (playerId === room.hostId) {
         return NextResponse.json(
-          { error: "Host cannot add videos" },
+          { error: "Host cannot add games" },
           { status: 403 }
         );
       }
@@ -133,14 +133,14 @@ export async function POST(req: NextRequest, { params }: Params) {
       const currentCount = room.playerGameCounts[playerId] ?? 0;
       if (currentCount >= room.maxGamesPerPlayer) {
         return NextResponse.json(
-          { error: "You have already added the maximum number of videos" },
+          { error: "You have already added the maximum number of games" },
           { status: 400 }
         );
       }
 
       if (room.gamePool.length >= room.maxGames) {
         return NextResponse.json(
-          { error: "Video list is already full" },
+          { error: "Game list is already full" },
           { status: 400 }
         );
       }
@@ -148,14 +148,14 @@ export async function POST(req: NextRequest, { params }: Params) {
       const videoId = parseYouTubeVideoId(paste);
       if (!videoId) {
         return NextResponse.json(
-          { error: "Paste a valid YouTube link or 11-character video ID" },
+          { error: "Paste a valid YouTube link or 11-character ID" },
           { status: 400 }
         );
       }
 
       if (room.gamePool.some((g) => videoIdsEqual(g.videoId, videoId))) {
         return NextResponse.json(
-          { error: "That video is already in the list" },
+          { error: "That game is already in the list" },
           { status: 400 }
         );
       }

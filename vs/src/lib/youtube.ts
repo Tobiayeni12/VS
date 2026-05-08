@@ -73,7 +73,7 @@ export async function fetchYoutubeMetadata(videoId: string): Promise<{
       const title =
         typeof j.title === "string" && j.title.trim()
           ? j.title.trim()
-          : "YouTube video";
+          : "Game";
       const thumbnailUrl =
         typeof j.thumbnail_url === "string" && j.thumbnail_url.startsWith("http")
           ? j.thumbnail_url
@@ -85,7 +85,7 @@ export async function fetchYoutubeMetadata(videoId: string): Promise<{
   }
 
   return {
-    title: "YouTube video",
+    title: "Game",
     thumbnailUrl: youtubeThumbnail(videoId),
   };
 }

@@ -36,7 +36,7 @@ export function YoutubePickCard({
             className="absolute inset-0 h-full w-full object-cover"
           />
           <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/45 text-center text-base font-bold uppercase tracking-wide text-white opacity-0 transition group-hover:opacity-100 sm:text-lg">
-            Pick this video
+            Pick this game
           </span>
         </span>
         {title ? (
