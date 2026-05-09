@@ -19,7 +19,21 @@ export default function RoomLobbyPage() {
     pollIntervalMs: 1500,
   });
 
-  useRoomPresence({ code, playerId });
+  const isHost = room?.hostId === playerId;
+  useRoomPresence({ code, playerId, isHost });
+
+  async function handleBack() {
+    // Leaving should immediately decrement host's player counter.
+    if (playerId && code && !isHost) {
+      await fetch(`/api/rooms/${code}/leave`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playerId }),
+        keepalive: true,
+      }).catch(() => undefined);
+    }
+    router.push("/join");
+  }
 
   const [youtubeInput, setYoutubeInput] = useState("");
   const [adding, setAdding] = useState(false);
@@ -68,10 +82,11 @@ export default function RoomLobbyPage() {
   }
 
   const gamesRemaining = room.maxGames - room.gamePool.length;
-  const isHost = room.hostId === playerId;
+  const isHostStrict = room.hostId === playerId;
   const waitingForHostSummary =
-    room.status === "settings" && !room.hostReady && !isHost;
-  const canAddGames = Boolean(playerId) && !isHost && room.status === "settings";
+    room.status === "settings" && !room.hostReady && !isHostStrict;
+  const canAddGames =
+    Boolean(playerId) && !isHostStrict && room.status === "settings";
   const hasStarted = room.status !== "settings";
   const myCount = playerId ? room.playerGameCounts?.[playerId] ?? 0 : 0;
   const myRemaining = Math.max(0, room.maxGamesPerPlayer - myCount);
@@ -82,7 +97,7 @@ export default function RoomLobbyPage() {
     <main className="relative flex min-h-screen flex-col items-center justify-center px-4 py-8">
       <button
         type="button"
-        onClick={() => router.push("/join")}
+        onClick={handleBack}
         className="absolute left-6 top-6 text-sm font-semibold text-white/90 transition hover:text-green-200"
       >
         ← Back

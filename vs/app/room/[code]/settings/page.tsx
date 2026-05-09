@@ -197,7 +197,9 @@ export default function RoomSettingsPage() {
               Players
             </p>
             <p className="mt-1 text-3xl font-extrabold text-emerald-50 tabular-nums">
-              {roomLoading && !room ? "—" : room?.players?.length ?? 0}
+              {roomLoading && !room
+                ? "0"
+                : Math.max(0, (room?.players?.length ?? 0) - 1)}
             </p>
           </div>
         </div>

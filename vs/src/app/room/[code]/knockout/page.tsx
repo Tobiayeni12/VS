@@ -139,7 +139,8 @@ export default function KnockoutPage() {
     pollIntervalMs: 2000,
   });
 
-  useRoomPresence({ code, playerId });
+  const isHostForPresence = room?.hostId === playerId;
+  useRoomPresence({ code, playerId, isHost: isHostForPresence });
 
   const [choosing, setChoosing] = useState(false);
   const [showBracketPreview, setShowBracketPreview] = useState(true);

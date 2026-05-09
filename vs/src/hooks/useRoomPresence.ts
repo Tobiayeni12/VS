@@ -3,6 +3,8 @@ import { useEffect, useRef } from "react";
 type Options = {
   code: string;
   playerId: string;
+  /** If true, don't send leave (host isn't counted as a player). */
+  isHost?: boolean;
 };
 
 function sendLeave(code: string, playerId: string) {
@@ -34,13 +36,14 @@ function sendLeave(code: string, playerId: string) {
 }
 
 /** Best-effort presence: when tab closes/navigates away, remove the player from the room. */
-export function useRoomPresence({ code, playerId }: Options) {
+export function useRoomPresence({ code, playerId, isHost }: Options) {
   const sentRef = useRef(false);
 
   useEffect(() => {
     sentRef.current = false;
 
     if (!code || !playerId) return;
+    if (isHost) return;
 
     const onPageHide = () => {
       if (sentRef.current) return;
@@ -54,6 +57,6 @@ export function useRoomPresence({ code, playerId }: Options) {
       window.removeEventListener("pagehide", onPageHide);
       window.removeEventListener("beforeunload", onPageHide);
     };
-  }, [code, playerId]);
+  }, [code, playerId, isHost]);
 }
 
