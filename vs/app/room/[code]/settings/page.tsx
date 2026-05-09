@@ -1,13 +1,14 @@
 "use client";
 
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import { normalizeRoomCode, useRoomPolling } from "@/hooks/useRoomPolling";
 
 export default function RoomSettingsPage() {
   const params = useParams<{ code: string }>();
   const search = useSearchParams();
   const router = useRouter();
-  const code = params.code.toUpperCase();
+  const code = normalizeRoomCode(params.code);
   const playerId = search.get("playerId") ?? "";
   const name = search.get("name") ?? "";
   const summaryHref = `/room/${code}/summary?${new URLSearchParams({
@@ -15,11 +16,30 @@ export default function RoomSettingsPage() {
     name,
   }).toString()}`;
 
+  const { room, loading: roomLoading, error: roomError } = useRoomPolling({
+    code,
+    pollIntervalMs: 1500,
+  });
+
   const [maxGames, setMaxGames] = useState(8);
   const [maxGamesPerPlayer, setMaxGamesPerPlayer] = useState(2);
   const [vsTitle, setVsTitle] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const initializedRef = useRef(false);
+  useEffect(() => {
+    initializedRef.current = false;
+  }, [code]);
+
+  useEffect(() => {
+    if (!room) return;
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+    setMaxGames(room.maxGames);
+    setMaxGamesPerPlayer(room.maxGamesPerPlayer);
+    setVsTitle(room.vsTitle ?? "");
+  }, [room]);
 
   async function handleLeaveRoomCode() {
     const confirmed = window.confirm(
@@ -84,6 +104,10 @@ export default function RoomSettingsPage() {
             Room {code} • Host: {name || "Host"}
           </p>
         </header>
+
+        {roomError && (
+          <p className="text-center text-sm text-red-400">{roomError}</p>
+        )}
 
         <form
           onSubmit={handleSubmit}
@@ -157,6 +181,26 @@ export default function RoomSettingsPage() {
             Leave room code
           </button>
         </form>
+
+        <div className="flex w-full justify-center pt-2">
+          <div className="flex flex-col items-center rounded-xl border border-emerald-500/40 bg-emerald-950/30 px-6 py-4 text-center">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className="h-9 w-9 text-emerald-200"
+              aria-hidden="true"
+            >
+              <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5Z" />
+            </svg>
+            <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-emerald-200/80">
+              Players
+            </p>
+            <p className="mt-1 text-3xl font-extrabold text-emerald-50 tabular-nums">
+              {roomLoading && !room ? "—" : room?.players?.length ?? 0}
+            </p>
+          </div>
+        </div>
       </div>
     </main>
   );

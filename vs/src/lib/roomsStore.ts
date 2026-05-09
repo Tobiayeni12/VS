@@ -145,6 +145,30 @@ export function deleteRoom(code: string, requesterId: string): boolean {
   return rooms.delete(code);
 }
 
+export function leaveRoom(code: string, requesterId: string): RoomState | undefined {
+  const room = rooms.get(code);
+  if (!room) return undefined;
+
+  // If the host leaves, delete the room entirely.
+  if (room.hostId === requesterId) {
+    rooms.delete(code);
+    return undefined;
+  }
+
+  const before = room.players.length;
+  room.players = room.players.filter((p) => p.id !== requesterId);
+
+  if (room.players.length === before) {
+    return room;
+  }
+
+  delete room.playerGameCounts[requesterId];
+  delete room.knockoutWins[requesterId];
+
+  // Note: gamePool submissions remain, since they may be part of the VS already.
+  return room;
+}
+
 function autoResolveByes(rounds: BracketMatch[][]): void {
   // Only the first round can have a bye (last match with gameB null)
   const round0 = rounds[0];

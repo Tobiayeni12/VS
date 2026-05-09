@@ -3,6 +3,7 @@
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { normalizeRoomCode, useRoomPolling } from "@/hooks/useRoomPolling";
+import { useRoomPresence } from "@/hooks/useRoomPresence";
 import { youtubeThumbnail, youtubeWatchUrl } from "@/lib/youtube";
 
 export default function RoomLobbyPage() {
@@ -17,6 +18,8 @@ export default function RoomLobbyPage() {
     code,
     pollIntervalMs: 1500,
   });
+
+  useRoomPresence({ code, playerId });
 
   const [youtubeInput, setYoutubeInput] = useState("");
   const [adding, setAdding] = useState(false);

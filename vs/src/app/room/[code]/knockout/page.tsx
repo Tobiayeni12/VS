@@ -4,6 +4,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { normalizeRoomCode, useRoomPolling } from "@/hooks/useRoomPolling";
+import { useRoomPresence } from "@/hooks/useRoomPresence";
 import type { RoomState } from "@/lib/gameTypes";
 import {
   videoIdsEqual,
@@ -137,6 +138,8 @@ export default function KnockoutPage() {
     code,
     pollIntervalMs: 2000,
   });
+
+  useRoomPresence({ code, playerId });
 
   const [choosing, setChoosing] = useState(false);
   const [showBracketPreview, setShowBracketPreview] = useState(true);
