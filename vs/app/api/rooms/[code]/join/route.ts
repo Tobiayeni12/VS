@@ -21,6 +21,16 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Room not found" }, { status: 404 });
   }
 
+  const nameTaken = room.players.some(
+    (p) => p.name.trim().toLowerCase() === name.toLowerCase()
+  );
+  if (nameTaken) {
+    return NextResponse.json(
+      { error: "That name is already taken in this room." },
+      { status: 409 }
+    );
+  }
+
   const updated = joinRoom(code, name);
   if (!updated) {
     return NextResponse.json({ error: "Unable to join" }, { status: 500 });
