@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { VsHostFloatingActions } from "@/components/VsHostFloatingActions";
 import { normalizeRoomCode, useRoomPolling } from "@/hooks/useRoomPolling";
 import { useVsReconnectSession } from "@/hooks/useVsReconnectSession";
@@ -27,6 +27,15 @@ export default function RoomLobbyPage() {
   const isHost = room?.hostId === playerId;
   useVsReconnectSession({ code, playerId, name });
   useRoomPresence({ code, playerId, isHost });
+
+  // Follow the host when they move to knockout.
+  useEffect(() => {
+    if (!room) return;
+    if (room.status === "knockout" || room.status === "finished") {
+      const qp = new URLSearchParams({ playerId, name });
+      router.replace(`/room/${code}/knockout?${qp.toString()}`);
+    }
+  }, [room?.status, code, playerId, name, router]);
 
   async function handleBack() {
     // Leaving should immediately decrement host's player counter.

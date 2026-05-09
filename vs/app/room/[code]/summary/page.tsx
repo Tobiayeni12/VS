@@ -35,6 +35,15 @@ export default function RoomSummaryPage() {
   useVsReconnectSession({ code, playerId, name });
   useRoomPresence({ code, playerId, isHost });
 
+  // Follow the host when they start knockout.
+  useEffect(() => {
+    if (!room) return;
+    if (room.status === "knockout" || room.status === "finished") {
+      const qp = new URLSearchParams({ playerId, name });
+      router.replace(`/room/${code}/knockout?${qp.toString()}`);
+    }
+  }, [room?.status, code, playerId, name, router]);
+
   function handleBack() {
     router.push(settingsHref);
   }

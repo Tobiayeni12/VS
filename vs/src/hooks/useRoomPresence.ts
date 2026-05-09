@@ -38,12 +38,17 @@ function sendLeave(code: string, playerId: string) {
 /** Best-effort presence: when tab closes/navigates away, remove the player from the room. */
 export function useRoomPresence({ code, playerId, isHost }: Options) {
   const sentRef = useRef(false);
+  // Once we've confirmed this client is the host, never register a leave handler —
+  // avoids a race where isHost is false on first render (room still loading) and the
+  // tab closes before the room resolves, which would delete the entire room.
+  const confirmedHostRef = useRef(false);
+  if (isHost) confirmedHostRef.current = true;
 
   useEffect(() => {
     sentRef.current = false;
 
     if (!code || !playerId) return;
-    if (isHost) return;
+    if (confirmedHostRef.current) return;
 
     const onPageHide = () => {
       if (sentRef.current) return;

@@ -19,7 +19,7 @@ const rooms: Map<string, RoomState> =
 const ROOM_TTL_SECONDS = 60 * 60 * 6; // 6 hours
 
 /** Guests without `lastSeen` (older rooms / pre-presence deploy) are not auto-evicted. */
-export const STALE_PLAYER_PRESENCE_MS = 120_000;
+export const STALE_PLAYER_PRESENCE_MS = 300_000;
 
 function roomKey(code: string) {
   return `vs:room:${code}`;

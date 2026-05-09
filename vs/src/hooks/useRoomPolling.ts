@@ -37,7 +37,7 @@ type Options = {
  * `guestRedirectOnRoomLost` only redirects joined non-host guests after several
  * consecutive 404 polls (KV / serverless blips should not bounce people to Join VS).
  */
-const GUEST_ROOM_LOST_REQUIRED_404_POLLS = 3;
+const GUEST_ROOM_LOST_REQUIRED_404_POLLS = 8;
 
 /** Cold KV / edge routing occasionally returns 404 once right after room create. */
 const INITIAL_STATE_404_ROUNDS = 8;

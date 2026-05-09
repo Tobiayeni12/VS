@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   evictStaleNonHostGuests,
-  getRoom,
+  getRoomWithBriefRetry,
   joinRoom,
   touchPlayerPresence,
 } from "@/lib/roomsStore";
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   await evictStaleNonHostGuests(code);
 
-  const room = await getRoom(code);
+  const room = await getRoomWithBriefRetry(code);
   if (!room) {
     return NextResponse.json({ error: "Room not found" }, { status: 404 });
   }
