@@ -56,12 +56,13 @@ export function VsHostFloatingActions({
     }
   }
 
+  // Icon size aligns with «← Back» links (text-sm ≈ 0.875rem); bubbles stay modest for mobile headers.
   const bubbleBtn =
-    "flex h-12 w-12 items-center justify-center rounded-full border border-white/30 bg-green-600/35 text-white shadow-lg backdrop-blur-sm transition hover:bg-green-600/55 hover:border-white/60 focus:outline-none focus:ring-2 focus:ring-green-300/70 disabled:opacity-50";
+    "flex h-9 w-9 items-center justify-center rounded-full border border-white/30 bg-green-600/35 text-white shadow-md backdrop-blur-sm transition hover:bg-green-600/55 hover:border-white/60 focus:outline-none focus:ring-2 focus:ring-green-300/70 disabled:opacity-50";
 
   return (
     <div
-      className="absolute right-4 top-4 z-40 flex flex-row gap-3 sm:right-6 sm:top-6"
+      className="absolute right-6 top-6 z-40 flex flex-row gap-2"
       aria-label="Host actions"
     >
       <button
@@ -72,30 +73,30 @@ export function VsHostFloatingActions({
         title="New VS — new room code and reset"
         aria-label="New VS room"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-6 w-6"
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/vs-reset-icon.png"
+          alt=""
+          className="size-3.5 object-contain"
           aria-hidden="true"
-        >
-          <path d="M21 12a9 9 0 1 1-9-9" />
-          <path d="M21 3v9h-9" />
-        </svg>
+          draggable={false}
+        />
       </button>
       <button
         type="button"
-        className={`${bubbleBtn} select-none font-medium`}
+        className={`${bubbleBtn} select-none`}
         onClick={() => router.push("/")}
         title="Home"
         aria-label="Home"
       >
-        {/* House emoji toned white for contrast */}
-        <span className="text-xl leading-none brightness-0 invert">🏠</span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/vs-home-icon.png"
+          alt=""
+          className="size-3.5 object-contain"
+          aria-hidden="true"
+          draggable={false}
+        />
       </button>
     </div>
   );
