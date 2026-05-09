@@ -2,6 +2,7 @@
 
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
+import { VsHostFloatingActions } from "@/components/VsHostFloatingActions";
 import { normalizeRoomCode, useRoomPolling } from "@/hooks/useRoomPolling";
 import { useRoomPresence } from "@/hooks/useRoomPresence";
 import { playerDisplayName } from "@/lib/roomHelpers";
@@ -14,25 +15,23 @@ export default function RoomSummaryPage() {
   const code = normalizeRoomCode(params.code);
   const playerId = search.get("playerId") ?? "";
   const name = search.get("name") ?? "";
+  const settingsHref = `/room/${code}/settings?${new URLSearchParams({
+    playerId,
+    name,
+  }).toString()}`;
 
   const { room, setRoom, loading, error, setError } = useRoomPolling({
     code,
     pollIntervalMs: 1500,
+    playerId,
+    guestRedirectOnRoomLost: true,
   });
 
   const isHost = room?.hostId === playerId;
   useRoomPresence({ code, playerId, isHost });
 
-  async function handleBack() {
-    if (playerId && code && !isHost) {
-      await fetch(`/api/rooms/${code}/leave`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playerId }),
-        keepalive: true,
-      }).catch(() => undefined);
-    }
-    router.push("/join");
+  function handleBack() {
+    router.push(settingsHref);
   }
 
   const [youtubeInput, setYoutubeInput] = useState("");
@@ -121,13 +120,15 @@ export default function RoomSummaryPage() {
   const isHostStrict = room.hostId === playerId;
   const canAddGames =
     Boolean(playerId) && !isHostStrict && room.status === "settings";
-  const settingsHref = `/room/${code}/settings?${new URLSearchParams({
-    playerId,
-    name,
-  }).toString()}`;
 
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center px-4 py-8">
+      <VsHostFloatingActions
+        code={code}
+        hostDisplayName={name}
+        playerId={playerId}
+        isHost={isHostStrict}
+      />
       <button
         type="button"
         onClick={handleBack}

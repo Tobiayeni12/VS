@@ -2,6 +2,7 @@
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { VsHostFloatingActions } from "@/components/VsHostFloatingActions";
 import { normalizeRoomCode, useRoomPolling } from "@/hooks/useRoomPolling";
 import { useRoomPresence } from "@/hooks/useRoomPresence";
 import { playerDisplayName } from "@/lib/roomHelpers";
@@ -18,6 +19,8 @@ export default function RoomLobbyPage() {
   const { room, setRoom, loading, error, setError } = useRoomPolling({
     code,
     pollIntervalMs: 1500,
+    playerId,
+    guestRedirectOnRoomLost: true,
   });
 
   const isHost = room?.hostId === playerId;
@@ -96,6 +99,12 @@ export default function RoomLobbyPage() {
 
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center px-4 py-8">
+      <VsHostFloatingActions
+        code={code}
+        hostDisplayName={name}
+        playerId={playerId}
+        isHost={isHostStrict}
+      />
       <button
         type="button"
         onClick={handleBack}

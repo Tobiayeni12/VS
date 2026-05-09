@@ -3,6 +3,7 @@
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { VsHostFloatingActions } from "@/components/VsHostFloatingActions";
 import { normalizeRoomCode, useRoomPolling } from "@/hooks/useRoomPolling";
 import { useRoomPresence } from "@/hooks/useRoomPresence";
 import type { RoomState } from "@/lib/gameTypes";
@@ -138,6 +139,8 @@ export default function KnockoutPage() {
   const { room, setRoom, loading, error, setError } = useRoomPolling({
     code,
     pollIntervalMs: 2000,
+    playerId,
+    guestRedirectOnRoomLost: true,
   });
 
   const isHostForPresence = room?.hostId === playerId;
@@ -218,7 +221,13 @@ export default function KnockoutPage() {
     : undefined;
 
   return (
-    <main className="flex min-h-screen flex-col items-center px-4 py-6">
+    <main className="relative flex min-h-screen flex-col items-center px-4 py-6">
+      <VsHostFloatingActions
+        code={code}
+        hostDisplayName={name}
+        playerId={playerId}
+        isHost={isHost}
+      />
       <div className="w-full space-y-6">
         <header className="space-y-1 text-center">
           <h1 className="text-2xl font-bold">VS Knockout</h1>
