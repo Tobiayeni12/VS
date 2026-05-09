@@ -5,6 +5,7 @@ import {
   kvDel,
   kvEnabled,
   kvGetJson,
+  kvGetJsonReliable,
   kvSetJsonReliable,
 } from "./roomsKv";
 
@@ -74,7 +75,8 @@ async function loadRoom(code: string): Promise<RoomState | undefined> {
     return cached;
   }
   if (!kvEnabled()) return undefined;
-  const fromKv = await kvGetJson<RoomState>(roomKey(code));
+  // Match SET retries — cold GETs after create occasionally fail once on Upstash/network.
+  const fromKv = await kvGetJsonReliable<RoomState>(roomKey(code));
   if (fromKv) {
     ensureRoomShape(fromKv);
     rooms.set(code, fromKv);

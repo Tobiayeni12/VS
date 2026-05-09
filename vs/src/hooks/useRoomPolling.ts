@@ -34,6 +34,14 @@ type Options = {
  */
 const GUEST_ROOM_LOST_REQUIRED_404_POLLS = 3;
 
+/** Cold KV / edge routing occasionally returns 404 once right after room create. */
+const INITIAL_STATE_404_ROUNDS = 8;
+const INITIAL_STATE_404_GAP_MS = 100;
+
+function sleep(ms: number) {
+  return new Promise<void>((r) => setTimeout(r, ms));
+}
+
 export function useRoomPolling({
   code,
   pollIntervalMs = 1500,
@@ -61,11 +69,32 @@ export function useRoomPolling({
     if (!code) return;
 
     try {
-      const res = await fetch(`/api/rooms/${code}/state`, {
-        cache: "no-store",
-      });
-      const text = await res.text();
-      const data = text ? JSON.parse(text) : {};
+      let res!: Response;
+      let text = "";
+      let data: Record<string, unknown> = {};
+
+      for (let round = 0; round < INITIAL_STATE_404_ROUNDS; round++) {
+        if (round > 0) {
+          await sleep(INITIAL_STATE_404_GAP_MS);
+        }
+
+        res = await fetch(`/api/rooms/${code}/state`, {
+          cache: "no-store",
+        });
+        text = await res.text();
+        data = text ? JSON.parse(text) : {};
+
+        if (res.ok) break;
+
+        const retryTransientRoomMiss =
+          res.status === 404 &&
+          !loadSucceededRef.current &&
+          round < INITIAL_STATE_404_ROUNDS - 1;
+
+        if (!retryTransientRoomMiss) {
+          break;
+        }
+      }
 
       if (!res.ok) {
         const guestWithId =
@@ -88,12 +117,15 @@ export function useRoomPolling({
         }
 
         consecutive404AfterLoadRef.current = 0;
-        throw new Error(data.error || "Failed to load room");
+        const msg =
+          typeof data.error === "string" ? data.error : "Failed to load room";
+        throw new Error(msg);
       }
 
       consecutive404AfterLoadRef.current = 0;
-      setRoom(data);
-      lastGoodRoomRef.current = data;
+      const roomState = data as RoomState;
+      setRoom(roomState);
+      lastGoodRoomRef.current = roomState;
       setError(null);
       loadSucceededRef.current = true;
     } catch (err) {
