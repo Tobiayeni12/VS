@@ -4,6 +4,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { normalizeRoomCode, useRoomPolling } from "@/hooks/useRoomPolling";
 import { useRoomPresence } from "@/hooks/useRoomPresence";
+import { playerDisplayName } from "@/lib/roomHelpers";
 import { youtubeThumbnail, youtubeWatchUrl } from "@/lib/youtube";
 
 export default function RoomLobbyPage() {
@@ -207,6 +208,9 @@ export default function RoomLobbyPage() {
                   <span className="font-semibold text-emerald-200">#{i + 1}</span>
                   <p className="mt-0.5 line-clamp-2 text-sm font-medium text-emerald-50">
                     {g.title || "Game"}
+                  </p>
+                  <p className="text-[11px] text-emerald-200/75">
+                    {playerDisplayName(room, g.submittedBy)}
                   </p>
                   <a
                     href={youtubeWatchUrl(g.videoId)}

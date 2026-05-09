@@ -6,6 +6,7 @@ import Image from "next/image";
 import { normalizeRoomCode, useRoomPolling } from "@/hooks/useRoomPolling";
 import { useRoomPresence } from "@/hooks/useRoomPresence";
 import type { RoomState } from "@/lib/gameTypes";
+import { playerDisplayName } from "@/lib/roomHelpers";
 import {
   videoIdsEqual,
   youtubeThumbnail,
@@ -262,6 +263,11 @@ export default function KnockoutPage() {
                         <p className="line-clamp-2 text-sm font-medium text-slate-50">
                           {g?.title ?? "Game"}
                         </p>
+                        {g && (
+                          <p className="text-[11px] text-slate-400">
+                            {playerDisplayName(room, g.submittedBy)}
+                          </p>
+                        )}
                         <a
                           href={youtubeWatchUrl(vid)}
                           target="_blank"
