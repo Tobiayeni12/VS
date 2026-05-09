@@ -12,7 +12,7 @@ const roboto = Roboto({
 export const metadata: Metadata = {
   title: "VS - Game Battles",
   description:
-    "Create and play game battles with friends, inspired by songbattle.io.",
+    "Create and play game battles with friends.",
 };
 
 export default function RootLayout({

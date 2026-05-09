@@ -294,6 +294,7 @@ export default function KnockoutPage() {
                     onPick={() => handleMatchClick(activeMatch.id, activeMatch.gameA)}
                     thumbnailUrl={leftPick?.thumbnailUrl}
                     title={leftPick?.title}
+                    pollSide="left"
                   />
 
                   <div className="flex items-center justify-center pb-10 sm:self-center sm:pb-0">
@@ -313,6 +314,7 @@ export default function KnockoutPage() {
                     onPick={() => handleMatchClick(activeMatch.id, activeMatch.gameB)}
                     thumbnailUrl={rightPick?.thumbnailUrl}
                     title={rightPick?.title}
+                    pollSide="right"
                   />
                 </div>
 
