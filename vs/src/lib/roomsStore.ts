@@ -272,7 +272,15 @@ export function chooseWinner(
   winner: string
 ): RoomState | undefined {
   const room = rooms.get(code);
-  if (!room || !room.bracket || room.status !== "knockout") return undefined;
+  if (!room || !room.bracket) return undefined;
+
+  // After the final pick, status becomes "finished". A duplicate POST (double-click,
+  // retry) must still return the room — otherwise the API falsely reports "Room not found".
+  if (room.status === "finished") {
+    return room;
+  }
+
+  if (room.status !== "knockout") return undefined;
 
   const bracket = room.bracket;
   const { currentPhase } = bracket;
@@ -319,13 +327,21 @@ export function chooseWinner(
       }
     }
   } else if (currentPhase === "finals" && bracket.finals) {
-    if (!bracket.finals.winner && (bracket.finals.gameA === winner || bracket.finals.gameB === winner)) {
-      bracket.finals.winner = winner;
+    const f = bracket.finals;
+    const pickA = f.gameA && videoIdsEqual(f.gameA, winner) ? f.gameA : null;
+    const pickB =
+      f.gameB && videoIdsEqual(f.gameB, winner) ? f.gameB : null;
+    if (!f.winner && (pickA || pickB)) {
+      const canonical = pickA ?? pickB!;
+      f.winner = canonical;
       room.status = "finished";
-      room.winner = winner;
+      room.winner = canonical;
+      bracket.currentPhase = "finished";
       matchFound = true;
 
-      const winningGame = room.gamePool.find((g) => videoIdsEqual(g.videoId, winner));
+      const winningGame = room.gamePool.find((g) =>
+        videoIdsEqual(g.videoId, canonical)
+      );
       if (winningGame) {
         room.knockoutWins[winningGame.submittedBy] =
           (room.knockoutWins[winningGame.submittedBy] ?? 0) + 1;

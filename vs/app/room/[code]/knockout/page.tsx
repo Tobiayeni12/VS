@@ -159,10 +159,11 @@ export default function KnockoutPage() {
   }, []);
 
   async function handleMatchClick(matchId: string, winner: string) {
+    if (!room?.code) return;
     setChoosing(true);
     setError(null);
     try {
-      const res = await fetch(`/api/rooms/${code}/round`, {
+      const res = await fetch(`/api/rooms/${room.code}/round`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "chooseWinner", matchId, winner }),
