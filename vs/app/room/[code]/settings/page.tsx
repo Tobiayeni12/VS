@@ -4,6 +4,7 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { VsHostFloatingActions } from "@/components/VsHostFloatingActions";
 import { normalizeRoomCode, useRoomPolling } from "@/hooks/useRoomPolling";
+import { useVsReconnectSession } from "@/hooks/useVsReconnectSession";
 
 export default function RoomSettingsPage() {
   const params = useParams<{ code: string }>();
@@ -16,6 +17,8 @@ export default function RoomSettingsPage() {
     playerId,
     name,
   }).toString()}`;
+
+  useVsReconnectSession({ code, playerId, name });
 
   const { room, loading: roomLoading, error: roomError, fetchState } =
     useRoomPolling({
@@ -132,7 +135,9 @@ export default function RoomSettingsPage() {
         </header>
 
         {roomError && (
-          <p className="text-center text-sm text-red-400">{roomError}</p>
+          <p className="text-center text-sm text-red-400">
+            {roomError}
+          </p>
         )}
 
         <form
@@ -141,7 +146,7 @@ export default function RoomSettingsPage() {
         >
           <div className="space-y-2">
             <label className="block text-sm font-medium text-green-100">
-              Max players
+              Max players (not counting you as host)
             </label>
             <select
               className="w-full rounded-lg border border-emerald-500/30 bg-emerald-950/30 px-3 py-2 text-sm text-emerald-100 outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400"

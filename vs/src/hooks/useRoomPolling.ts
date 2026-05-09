@@ -18,8 +18,9 @@ type Options = {
   /** From URL; used only with `guestRedirectOnRoomLost` */
   playerId?: string;
   /**
-   * When the host deletes/refreshes the room, non-host polls get 404. Send guests
-   * to Join VS (`/join`) instead of silently showing stale UI.
+   * When the host deletes/refreshes the room, joined guests eventually see repeated
+   * 404s; after several consecutive failures they go to `/join`. Not used for spectators
+   * without `playerId`.
    */
   guestRedirectOnRoomLost?: boolean;
 };
@@ -27,7 +28,12 @@ type Options = {
 /**
  * Fetches room state on an interval. Surfaces "Room not found" only on the
  * initial load so transient polls / navigation glitches don't flash errors.
+ *
+ * `guestRedirectOnRoomLost` only redirects joined non-host guests after several
+ * consecutive 404 polls (KV / serverless blips should not bounce people to Join VS).
  */
+const GUEST_ROOM_LOST_REQUIRED_404_POLLS = 3;
+
 export function useRoomPolling({
   code,
   pollIntervalMs = 1500,
@@ -40,10 +46,12 @@ export function useRoomPolling({
   const [error, setError] = useState<string | null>(null);
   const loadSucceededRef = useRef(false);
   const lastGoodRoomRef = useRef<RoomState | null>(null);
+  const consecutive404AfterLoadRef = useRef(0);
 
   useEffect(() => {
     loadSucceededRef.current = false;
     lastGoodRoomRef.current = null;
+    consecutive404AfterLoadRef.current = 0;
     setRoom(null);
     setLoading(true);
     setError(null);
@@ -60,18 +68,30 @@ export function useRoomPolling({
       const data = text ? JSON.parse(text) : {};
 
       if (!res.ok) {
-        if (
+        const guestWithId =
+          Boolean(playerId) &&
+          Boolean(lastGoodRoomRef.current) &&
+          playerId !== lastGoodRoomRef.current!.hostId;
+        const shouldConsiderGuestLost =
           guestRedirectOnRoomLost &&
+          guestWithId &&
           res.status === 404 &&
-          loadSucceededRef.current &&
-          lastGoodRoomRef.current &&
-          !(playerId && lastGoodRoomRef.current.hostId === playerId)
-        ) {
-          router.push("/join");
+          loadSucceededRef.current;
+
+        if (shouldConsiderGuestLost) {
+          consecutive404AfterLoadRef.current += 1;
+          if (consecutive404AfterLoadRef.current >= GUEST_ROOM_LOST_REQUIRED_404_POLLS) {
+            router.push("/join");
+            return;
+          }
           return;
         }
+
+        consecutive404AfterLoadRef.current = 0;
         throw new Error(data.error || "Failed to load room");
       }
+
+      consecutive404AfterLoadRef.current = 0;
       setRoom(data);
       lastGoodRoomRef.current = data;
       setError(null);

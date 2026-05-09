@@ -1,7 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import {
+  readVsRoomSession,
+  type VsStoredRoomSession,
+} from "@/lib/vsRoomSession";
 
 export default function JoinPage() {
   const router = useRouter();
@@ -9,6 +13,18 @@ export default function JoinPage() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [storedHint, setStoredHint] = useState<VsStoredRoomSession | null>(
+    null
+  );
+
+  useEffect(() => {
+    const clean = code.trim().toUpperCase();
+    if (!clean || clean.length < 4) {
+      setStoredHint(null);
+      return;
+    }
+    setStoredHint(readVsRoomSession(clean));
+  }, [code]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -16,16 +32,29 @@ export default function JoinPage() {
     setError(null);
     try {
       const cleanCode = code.trim().toUpperCase();
+      let resumePlayerId: string | undefined;
+
+      const stored = readVsRoomSession(cleanCode);
+      if (
+        stored &&
+        stored.name.trim().toLowerCase() === name.trim().toLowerCase()
+      ) {
+        resumePlayerId = stored.playerId;
+      }
+
       const res = await fetch(`/api/rooms/${cleanCode}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({
+          name,
+          ...(resumePlayerId ? { resumePlayerId } : {}),
+        }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Failed to join");
 
       const params = new URLSearchParams({
-        playerId: data.playerId,
+        playerId: data.playerId as string,
         name,
       });
       router.push(`/room/${cleanCode}?${params.toString()}`);
@@ -47,6 +76,21 @@ export default function JoinPage() {
       </button>
       <div className="w-full max-w-md space-y-6">
         <h1 className="text-3xl font-bold text-center">Join VS</h1>
+        <p className="text-xs text-center text-slate-400 leading-relaxed px-2">
+          Same browser remembers your player after you&apos;ve joined. If you lag
+          out, reopen Join VS with this code and{" "}
+          <span className="text-emerald-200/90">exactly</span> the same display name
+          to reconnect.
+        </p>
+        {storedHint && (
+          <p className="text-xs text-center text-emerald-200/80 leading-relaxed px-2">
+            This device can reconnect as{" "}
+            <span className="font-semibold text-emerald-100">
+              {storedHint.name}
+            </span>
+            — use that exact name below.
+          </p>
+        )}
         <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
           <div className="space-y-2">
             <label className="block text-sm font-medium text-slate-200">
@@ -87,4 +131,3 @@ export default function JoinPage() {
     </main>
   );
 }
-

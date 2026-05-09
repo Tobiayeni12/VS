@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { VsHostFloatingActions } from "@/components/VsHostFloatingActions";
 import { normalizeRoomCode, useRoomPolling } from "@/hooks/useRoomPolling";
+import { useVsReconnectSession } from "@/hooks/useVsReconnectSession";
 import { useRoomPresence } from "@/hooks/useRoomPresence";
 import type { RoomState } from "@/lib/gameTypes";
 import { playerDisplayName } from "@/lib/roomHelpers";
@@ -144,6 +145,7 @@ export default function KnockoutPage() {
   });
 
   const isHostForPresence = room?.hostId === playerId;
+  useVsReconnectSession({ code, playerId, name });
   useRoomPresence({ code, playerId, isHost: isHostForPresence });
 
   const [choosing, setChoosing] = useState(false);

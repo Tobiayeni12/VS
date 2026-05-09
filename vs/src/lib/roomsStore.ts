@@ -17,6 +17,9 @@ const rooms: Map<string, RoomState> =
 
 const ROOM_TTL_SECONDS = 60 * 60 * 6; // 6 hours
 
+/** Guests without `lastSeen` (older rooms / pre-presence deploy) are not auto-evicted. */
+export const STALE_PLAYER_PRESENCE_MS = 120_000;
+
 function roomKey(code: string) {
   return `vs:room:${code}`;
 }
@@ -100,6 +103,7 @@ export async function createRoom(hostName: string): Promise<RoomState> {
     id: randomUUID(),
     name: hostName,
     score: 0,
+    lastSeen: Date.now(),
   };
 
   const room: RoomState = {
@@ -226,6 +230,46 @@ export async function deleteRoom(code: string, requesterId: string): Promise<boo
   if (room.hostId !== requesterId) return false;
   rooms.delete(code);
   if (kvEnabled()) await kvDel(roomKey(code));
+  return true;
+}
+
+export async function evictStaleNonHostGuests(code: string): Promise<boolean> {
+  const room = await loadRoom(code);
+  if (!room) return false;
+
+  const now = Date.now();
+  const staleIds = room.players
+    .filter((p) => {
+      if (p.id === room.hostId) return false;
+      if (typeof p.lastSeen !== "number") return false;
+      return now - p.lastSeen > STALE_PLAYER_PRESENCE_MS;
+    })
+    .map((p) => p.id);
+
+  if (!staleIds.length) return false;
+
+  room.players = room.players.filter((p) => !staleIds.includes(p.id));
+
+  for (const id of staleIds) {
+    delete room.playerGameCounts[id];
+    delete room.knockoutWins[id];
+  }
+
+  await persistRoom(room);
+  return true;
+}
+
+export async function touchPlayerPresence(
+  code: string,
+  playerId: string
+): Promise<boolean> {
+  const room = await loadRoom(code);
+  if (!room) return false;
+  const player = room.players.find((p) => p.id === playerId);
+  if (!player) return false;
+
+  player.lastSeen = Date.now();
+  await persistRoom(room);
   return true;
 }
 
@@ -486,6 +530,7 @@ export async function joinRoom(code: string, name: string): Promise<RoomState | 
     id: randomUUID(),
     name,
     score: 0,
+    lastSeen: Date.now(),
   };
 
   room.players.push(player);

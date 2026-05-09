@@ -4,6 +4,7 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { VsHostFloatingActions } from "@/components/VsHostFloatingActions";
 import { normalizeRoomCode, useRoomPolling } from "@/hooks/useRoomPolling";
+import { useVsReconnectSession } from "@/hooks/useVsReconnectSession";
 
 export default function RoomSettingsPage() {
   const params = useParams<{ code: string }>();
@@ -16,6 +17,8 @@ export default function RoomSettingsPage() {
     playerId,
     name,
   }).toString()}`;
+
+  useVsReconnectSession({ code, playerId, name });
 
   const { room, loading: roomLoading, error: roomError, fetchState } =
     useRoomPolling({

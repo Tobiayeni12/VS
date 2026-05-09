@@ -2,6 +2,8 @@ export type Player = {
   id: string;
   name: string;
   score: number;
+  /** Last client heartbeat (`/presence`); used only to evict very stale ghosts. */
+  lastSeen?: number;
 };
 
 /** Each game is backed by a YouTube link; bracket stores matching video ids */

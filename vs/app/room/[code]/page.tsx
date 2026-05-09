@@ -4,6 +4,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { VsHostFloatingActions } from "@/components/VsHostFloatingActions";
 import { normalizeRoomCode, useRoomPolling } from "@/hooks/useRoomPolling";
+import { useVsReconnectSession } from "@/hooks/useVsReconnectSession";
 import { useRoomPresence } from "@/hooks/useRoomPresence";
 import { playerDisplayName } from "@/lib/roomHelpers";
 import { youtubeThumbnail, youtubeWatchUrl } from "@/lib/youtube";
@@ -24,9 +25,11 @@ export default function RoomLobbyPage() {
   });
 
   const isHost = room?.hostId === playerId;
+  useVsReconnectSession({ code, playerId, name });
   useRoomPresence({ code, playerId, isHost });
 
   async function handleBack() {
+    // Leaving should immediately decrement host's player counter.
     if (playerId && code && !isHost) {
       await fetch(`/api/rooms/${code}/leave`, {
         method: "POST",
