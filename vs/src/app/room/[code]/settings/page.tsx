@@ -16,10 +16,11 @@ export default function RoomSettingsPage() {
     name,
   }).toString()}`;
 
-  const { room, loading: roomLoading, error: roomError } = useRoomPolling({
-    code,
-    pollIntervalMs: 1500,
-  });
+  const { room, loading: roomLoading, error: roomError, fetchState } =
+    useRoomPolling({
+      code,
+      pollIntervalMs: 1500,
+    });
 
   const [maxPlayers, setMaxPlayers] = useState(32);
   const [maxGames, setMaxGames] = useState(8);
@@ -64,26 +65,41 @@ export default function RoomSettingsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/rooms/${code}/settings`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          maxPlayers,
-          maxGames,
-          maxGamesPerPlayer,
-          vsTitle,
-        }),
-      });
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const res = await fetch(`/api/rooms/${code}/settings`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            maxPlayers,
+            maxGames,
+            maxGamesPerPlayer,
+            vsTitle,
+          }),
+        });
 
-      const text = await res.text();
-      const data = text ? JSON.parse(text) : {};
-      if (!res.ok) throw new Error(data.error || "Failed to save settings");
+        const text = await res.text();
+        const data = text ? JSON.parse(text) : {};
+        if (!res.ok) {
+          const msg = typeof data.error === "string" ? data.error : "";
+          if (
+            attempt === 0 &&
+            res.status === 404 &&
+            msg.toLowerCase().includes("not found")
+          ) {
+            await new Promise((r) => setTimeout(r, 400));
+            await fetchState();
+            continue;
+          }
+          throw new Error(data.error || "Failed to save settings");
+        }
 
-      const qp = new URLSearchParams({
-        playerId,
-        name,
-      });
-      router.push(`/room/${code}/summary?${qp.toString()}`);
+        const qp = new URLSearchParams({
+          playerId,
+          name,
+        });
+        router.push(`/room/${code}/summary?${qp.toString()}`);
+        break;
+      }
     } catch (err) {
       setError((err as Error).message);
     } finally {

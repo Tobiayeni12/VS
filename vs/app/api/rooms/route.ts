@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createRoom } from "@/lib/roomsStore";
+import { createRoom, RoomPersistError } from "@/lib/roomsStore";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
@@ -8,11 +8,23 @@ export async function POST(req: NextRequest) {
       ? body.name.trim()
       : "Host";
 
-  const room = await createRoom(name);
-
-  return NextResponse.json({
-    code: room.code,
-    hostId: room.hostId,
-  });
+  try {
+    const room = await createRoom(name);
+    return NextResponse.json({
+      code: room.code,
+      hostId: room.hostId,
+    });
+  } catch (err) {
+    if (err instanceof RoomPersistError) {
+      return NextResponse.json(
+        {
+          error:
+            "Could not save the room to storage. Wait a moment and create again.",
+        },
+        { status: 503 }
+      );
+    }
+    throw err;
+  }
 }
 

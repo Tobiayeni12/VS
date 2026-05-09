@@ -1,7 +1,12 @@
 import { randomUUID } from "crypto";
 import { RoomState, Player, Round, Submission, Vote, GamePoolEntry, BracketMatch, BracketSide, TournamentBracket } from "./gameTypes";
 import { videoIdsEqual } from "./youtube";
-import { kvDel, kvEnabled, kvGetJson, kvSetJson } from "./roomsKv";
+import {
+  kvDel,
+  kvEnabled,
+  kvGetJson,
+  kvSetJsonReliable,
+} from "./roomsKv";
 
 const rooms: Map<string, RoomState> =
   (globalThis as unknown as { __vsRooms?: Map<string, RoomState> }).__vsRooms ??
@@ -16,11 +21,33 @@ function roomKey(code: string) {
   return `vs:room:${code}`;
 }
 
-async function persistRoom(room: RoomState): Promise<void> {
-  rooms.set(room.code, room);
-  if (kvEnabled()) {
-    await kvSetJson(roomKey(room.code), room, ROOM_TTL_SECONDS);
+export class RoomPersistError extends Error {
+  constructor(message = "Could not save room to shared storage") {
+    super(message);
+    this.name = "RoomPersistError";
   }
+}
+
+async function persistRoom(room: RoomState): Promise<void> {
+  if (kvEnabled()) {
+    const ok = await kvSetJsonReliable(
+      roomKey(room.code),
+      room,
+      ROOM_TTL_SECONDS
+    );
+    if (!ok) {
+      // Roll back local cache to last durable snapshot (avoid split-brain on other instances).
+      const restored = await kvGetJson<RoomState>(roomKey(room.code));
+      if (restored) {
+        ensureRoomShape(restored);
+        rooms.set(room.code, restored);
+      } else {
+        rooms.delete(room.code);
+      }
+      throw new RoomPersistError();
+    }
+  }
+  rooms.set(room.code, room);
 }
 
 export async function saveRoom(room: RoomState): Promise<void> {

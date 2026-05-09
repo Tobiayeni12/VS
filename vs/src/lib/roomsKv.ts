@@ -55,6 +55,35 @@ export async function kvSetJson(key: string, value: unknown, ttlSeconds: number)
   return ok === "OK";
 }
 
+const KV_RETRY_DELAYS_MS = [0, 80, 220];
+
+async function sleep(ms: number) {
+  await new Promise((r) => setTimeout(r, ms));
+}
+
+/** SET with retries — first request after cold start occasionally fails transiently on Upstash/network. */
+export async function kvSetJsonReliable(
+  key: string,
+  value: unknown,
+  ttlSeconds: number
+): Promise<boolean> {
+  for (let i = 0; i < KV_RETRY_DELAYS_MS.length; i++) {
+    await sleep(KV_RETRY_DELAYS_MS[i] ?? 0);
+    if (await kvSetJson(key, value, ttlSeconds)) return true;
+  }
+  return false;
+}
+
+/** GET with retries for the same transient failure window. */
+export async function kvGetJsonReliable<T>(key: string): Promise<T | null> {
+  for (let i = 0; i < KV_RETRY_DELAYS_MS.length; i++) {
+    await sleep(KV_RETRY_DELAYS_MS[i] ?? 0);
+    const v = await kvGetJson<T>(key);
+    if (v) return v;
+  }
+  return null;
+}
+
 export async function kvDel(key: string) {
   if (!isUpstashConfigured()) return false;
   const n = await upstashCommand<number>(["DEL", key]);
