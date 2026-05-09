@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { RoomState, Player, Round, Submission, Vote, GamePoolEntry, BracketMatch, BracketSide, TournamentBracket } from "./gameTypes";
 import { videoIdsEqual } from "./youtube";
+import { kvDel, kvEnabled, kvGetJson, kvSetJson } from "./roomsKv";
 
 const rooms: Map<string, RoomState> =
   (globalThis as unknown as { __vsRooms?: Map<string, RoomState> }).__vsRooms ??
@@ -8,6 +9,35 @@ const rooms: Map<string, RoomState> =
 
 (globalThis as unknown as { __vsRooms?: Map<string, RoomState> }).__vsRooms =
   rooms;
+
+const ROOM_TTL_SECONDS = 60 * 60 * 6; // 6 hours
+
+function roomKey(code: string) {
+  return `vs:room:${code}`;
+}
+
+async function persistRoom(room: RoomState): Promise<void> {
+  rooms.set(room.code, room);
+  if (kvEnabled()) {
+    await kvSetJson(roomKey(room.code), room, ROOM_TTL_SECONDS);
+  }
+}
+
+export async function saveRoom(room: RoomState): Promise<void> {
+  await persistRoom(room);
+}
+
+async function loadRoom(code: string): Promise<RoomState | undefined> {
+  const cached = rooms.get(code);
+  if (cached) return cached;
+  if (!kvEnabled()) return undefined;
+  const fromKv = await kvGetJson<RoomState>(roomKey(code));
+  if (fromKv) {
+    rooms.set(code, fromKv);
+    return fromKv;
+  }
+  return undefined;
+}
 
 function generateRoomCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -18,9 +48,10 @@ function generateRoomCode(): string {
   return code;
 }
 
-export function createRoom(hostName: string): RoomState {
+export async function createRoom(hostName: string): Promise<RoomState> {
   let code = generateRoomCode();
-  while (rooms.has(code)) {
+  // ensure uniqueness across KV too
+  while (rooms.has(code) || (kvEnabled() && (await kvGetJson(roomKey(code))))) {
     code = generateRoomCode();
   }
 
@@ -50,7 +81,7 @@ export function createRoom(hostName: string): RoomState {
     knockoutWins: {},
   };
 
-  rooms.set(code, room);
+  await persistRoom(room);
   return room;
 }
 
@@ -59,8 +90,9 @@ export function setSettings(
   maxGames: number,
   maxGamesPerPlayer: number,
   vsTitle?: string
-): RoomState | undefined {
-  const room = rooms.get(code);
+): Promise<RoomState | undefined> {
+  return (async () => {
+  const room = await loadRoom(code);
   if (!room) return undefined;
   const resettingLobby = room.status !== "settings";
 
@@ -84,15 +116,20 @@ export function setSettings(
   }
   room.hostReady = false;
   room.status = "settings";
+  await persistRoom(room);
   return room;
+  })();
 }
 
-export function markHostReady(code: string, requesterId: string): RoomState | undefined {
-  const room = rooms.get(code);
+export function markHostReady(code: string, requesterId: string): Promise<RoomState | undefined> {
+  return (async () => {
+  const room = await loadRoom(code);
   if (!room) return undefined;
   if (room.hostId !== requesterId) return undefined;
   room.hostReady = true;
+  await persistRoom(room);
   return room;
+  })();
 }
 
 function createBracketRounds(games: string[]): BracketMatch[][] {
@@ -134,24 +171,28 @@ function createBracketRounds(games: string[]): BracketMatch[][] {
   return rounds;
 }
 
-export function getRoom(code: string): RoomState | undefined {
-  return rooms.get(code);
+export function getRoom(code: string): Promise<RoomState | undefined> {
+  return loadRoom(code);
 }
 
-export function deleteRoom(code: string, requesterId: string): boolean {
-  const room = rooms.get(code);
+export async function deleteRoom(code: string, requesterId: string): Promise<boolean> {
+  const room = await loadRoom(code);
   if (!room) return false;
   if (room.hostId !== requesterId) return false;
-  return rooms.delete(code);
+  rooms.delete(code);
+  if (kvEnabled()) await kvDel(roomKey(code));
+  return true;
 }
 
-export function leaveRoom(code: string, requesterId: string): RoomState | undefined {
-  const room = rooms.get(code);
+export function leaveRoom(code: string, requesterId: string): Promise<RoomState | undefined> {
+  return (async () => {
+  const room = await loadRoom(code);
   if (!room) return undefined;
 
   // If the host leaves, delete the room entirely.
   if (room.hostId === requesterId) {
     rooms.delete(code);
+    if (kvEnabled()) await kvDel(roomKey(code));
     return undefined;
   }
 
@@ -166,7 +207,9 @@ export function leaveRoom(code: string, requesterId: string): RoomState | undefi
   delete room.knockoutWins[requesterId];
 
   // Note: gamePool submissions remain, since they may be part of the VS already.
+  await persistRoom(room);
   return room;
+  })();
 }
 
 function autoResolveByes(rounds: BracketMatch[][]): void {
@@ -200,8 +243,8 @@ function shuffle<T>(arr: T[]): T[] {
   return copy;
 }
 
-export function startKnockout(code: string): RoomState | undefined {
-  const room = rooms.get(code);
+export async function startKnockout(code: string): Promise<RoomState | undefined> {
+  const room = await loadRoom(code);
   if (!room) return undefined;
   if (room.gamePool.length < 2) return room;
 
@@ -258,6 +301,7 @@ export function startKnockout(code: string): RoomState | undefined {
   room.bracket = bracket;
   room.status = "knockout";
   room.winner = null;
+  await persistRoom(room);
   return room;
 }
 
@@ -290,12 +334,12 @@ function advanceInPhase(rounds: BracketMatch[][], matchId: string, winner: strin
   return false;
 }
 
-export function chooseWinner(
+export async function chooseWinner(
   code: string,
   matchId: string,
   winner: string
-): RoomState | undefined {
-  const room = rooms.get(code);
+): Promise<RoomState | undefined> {
+  const room = await loadRoom(code);
   if (!room || !room.bracket) return undefined;
 
   // After the final pick, status becomes "finished". A duplicate POST (double-click,
@@ -373,11 +417,12 @@ export function chooseWinner(
     }
   }
 
+  await persistRoom(room);
   return room;
 }
 
-export function joinRoom(code: string, name: string): RoomState | undefined {
-  const room = rooms.get(code);
+export async function joinRoom(code: string, name: string): Promise<RoomState | undefined> {
+  const room = await loadRoom(code);
   if (!room) return undefined;
 
   const existing = room.players.find(
@@ -395,11 +440,12 @@ export function joinRoom(code: string, name: string): RoomState | undefined {
 
   room.players.push(player);
   room.playerGameCounts[player.id] = 0;
+  await persistRoom(room);
   return room;
 }
 
-export function startRound(code: string, prompt: string): RoomState | undefined {
-  const room = rooms.get(code);
+export async function startRound(code: string, prompt: string): Promise<RoomState | undefined> {
+  const room = await loadRoom(code);
   if (!room) return undefined;
 
   const round: Round = {
@@ -413,15 +459,16 @@ export function startRound(code: string, prompt: string): RoomState | undefined 
 
   room.currentRound = round;
   room.status = "lobby";
+  await persistRoom(room);
   return room;
 }
 
-export function submitGame(
+export async function submitGame(
   code: string,
   playerId: string,
   gameTitle: string
-): RoomState | undefined {
-  const room = rooms.get(code);
+): Promise<RoomState | undefined> {
+  const room = await loadRoom(code);
   if (!room || !room.currentRound) return undefined;
 
   const round = room.currentRound;
@@ -441,19 +488,20 @@ export function submitGame(
   return room;
 }
 
-export function moveToVoting(code: string): RoomState | undefined {
-  const room = rooms.get(code);
+export async function moveToVoting(code: string): Promise<RoomState | undefined> {
+  const room = await loadRoom(code);
   if (!room || !room.currentRound) return undefined;
   room.currentRound.phase = "voting";
+  await persistRoom(room);
   return room;
 }
 
-export function castVote(
+export async function castVote(
   code: string,
   playerId: string,
   submissionId: string
-): RoomState | undefined {
-  const room = rooms.get(code);
+): Promise<RoomState | undefined> {
+  const room = await loadRoom(code);
   if (!room || !room.currentRound) return undefined;
 
   const round = room.currentRound;
@@ -469,8 +517,8 @@ export function castVote(
   return room;
 }
 
-export function finishRound(code: string): RoomState | undefined {
-  const room = rooms.get(code);
+export async function finishRound(code: string): Promise<RoomState | undefined> {
+  const room = await loadRoom(code);
   if (!room || !room.currentRound) return undefined;
 
   const round = room.currentRound;
@@ -491,6 +539,7 @@ export function finishRound(code: string): RoomState | undefined {
   round.phase = "results";
   room.status = "lobby";
 
+  await persistRoom(room);
   return room;
 }
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { setSettings, getRoom, markHostReady } from "@/lib/roomsStore";
+import { setSettings, getRoom, markHostReady, saveRoom } from "@/lib/roomsStore";
 import {
   fetchYoutubeMetadata,
   parseYouTubeVideoId,
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         );
       }
 
-      const room = markHostReady(code, playerId);
+      const room = await markHostReady(code, playerId);
       if (!room) {
         return NextResponse.json(
           { error: "Room not found or not authorized" },
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       return NextResponse.json(room);
     }
 
-    const roomForRemove = getRoom(code);
+    const roomForRemove = await getRoom(code);
     const removeCandidate =
       typeof removeVideoId === "string"
         ? removeVideoId.trim()
@@ -96,6 +96,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         );
       }
 
+      await saveRoom(roomForRemove);
       return NextResponse.json(roomForRemove);
     }
 
@@ -107,7 +108,7 @@ export async function POST(req: NextRequest, { params }: Params) {
           : "";
 
     if (paste) {
-      const room = getRoom(code);
+      const room = await getRoom(code);
       if (!room) {
         return NextResponse.json({ error: "Room not found" }, { status: 404 });
       }
@@ -169,11 +170,12 @@ export async function POST(req: NextRequest, { params }: Params) {
       });
       room.playerGameCounts[playerId] = currentCount + 1;
 
+      await saveRoom(room);
       return NextResponse.json(room);
     }
 
     if (typeof maxGames === "number" && typeof maxGamesPerPlayer === "number") {
-      const room = setSettings(code, maxGames, maxGamesPerPlayer, vsTitle);
+      const room = await setSettings(code, maxGames, maxGamesPerPlayer, vsTitle);
       if (!room)
         return NextResponse.json({ error: "Room not found" }, { status: 404 });
       return NextResponse.json(room);

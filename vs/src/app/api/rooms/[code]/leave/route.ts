@@ -28,7 +28,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ ok: true });
   }
 
-  leaveRoom(code, playerId);
+  await leaveRoom(code, playerId);
   return NextResponse.json({ ok: true });
 }
 

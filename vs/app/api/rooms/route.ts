@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
       ? body.name.trim()
       : "Host";
 
-  const room = createRoom(name);
+  const room = await createRoom(name);
 
   return NextResponse.json({
     code: room.code,

@@ -16,7 +16,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "playerId required" }, { status: 400 });
   }
 
-  const deleted = deleteRoom(code, playerId);
+  const deleted = await deleteRoom(code, playerId);
   if (!deleted) {
     return NextResponse.json(
       { error: "Room not found or not authorized" },

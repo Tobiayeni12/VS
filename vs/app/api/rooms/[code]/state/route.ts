@@ -9,7 +9,7 @@ type Params = {
 
 export async function GET(_req: Request, { params }: Params) {
   const code = params.code.toUpperCase();
-  const room = getRoom(code);
+  const room = await getRoom(code);
 
   if (!room) {
     return NextResponse.json({ error: "Room not found" }, { status: 404 });

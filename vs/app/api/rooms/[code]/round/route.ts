@@ -18,7 +18,7 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   switch (action) {
     case "startKnockout": {
-      const room = startKnockout(code);
+      const room = await startKnockout(code);
       if (!room)
         return NextResponse.json({ error: "Room not found" }, { status: 404 });
       return NextResponse.json(room);
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest, { params }: Params) {
           { status: 400 }
         );
       }
-      const room = chooseWinner(code, matchId, winner);
+      const room = await chooseWinner(code, matchId, winner);
       if (!room)
         return NextResponse.json({ error: "Room not found" }, { status: 404 });
       return NextResponse.json(room);

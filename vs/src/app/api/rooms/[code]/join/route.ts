@@ -16,7 +16,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Name required" }, { status: 400 });
   }
 
-  const room = getRoom(code);
+  const room = await getRoom(code);
   if (!room) {
     return NextResponse.json({ error: "Room not found" }, { status: 404 });
   }
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     );
   }
 
-  const updated = joinRoom(code, name);
+  const updated = await joinRoom(code, name);
   if (!updated) {
     return NextResponse.json({ error: "Unable to join" }, { status: 500 });
   }
