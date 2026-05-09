@@ -23,6 +23,11 @@ type Options = {
    * without `playerId`.
    */
   guestRedirectOnRoomLost?: boolean;
+  /**
+   * If set, read `sessionStorage` once per `code` and hydrate room state (e.g. after
+   * settings POST) so the UI is not blocked on `/state` while KV catches up.
+   */
+  roomSeedSessionKey?: string;
 };
 
 /**
@@ -47,6 +52,7 @@ export function useRoomPolling({
   pollIntervalMs = 1500,
   playerId = "",
   guestRedirectOnRoomLost = false,
+  roomSeedSessionKey,
 }: Options) {
   const router = useRouter();
   const [room, setRoom] = useState<RoomState | null>(null);
@@ -63,7 +69,35 @@ export function useRoomPolling({
     setRoom(null);
     setLoading(true);
     setError(null);
-  }, [code]);
+
+    if (!code) return;
+
+    if (roomSeedSessionKey && typeof window !== "undefined") {
+      try {
+        const raw = sessionStorage.getItem(roomSeedSessionKey);
+        if (raw) {
+          const parsed = JSON.parse(raw) as RoomState;
+          const parsedCode =
+            typeof parsed?.code === "string"
+              ? parsed.code.trim().toUpperCase()
+              : "";
+          if (parsedCode === code) {
+            setRoom(parsed);
+            lastGoodRoomRef.current = parsed;
+            loadSucceededRef.current = true;
+            setError(null);
+            setLoading(false);
+          }
+        }
+      } catch {
+        try {
+          sessionStorage.removeItem(roomSeedSessionKey);
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+  }, [code, roomSeedSessionKey]);
 
   const fetchState = useCallback(async () => {
     if (!code) return;
@@ -128,6 +162,13 @@ export function useRoomPolling({
       lastGoodRoomRef.current = roomState;
       setError(null);
       loadSucceededRef.current = true;
+      if (roomSeedSessionKey && typeof window !== "undefined") {
+        try {
+          sessionStorage.removeItem(roomSeedSessionKey);
+        } catch {
+          /* ignore */
+        }
+      }
     } catch (err) {
       if (!loadSucceededRef.current) {
         setError((err as Error).message);
@@ -139,6 +180,7 @@ export function useRoomPolling({
     code,
     guestRedirectOnRoomLost,
     playerId,
+    roomSeedSessionKey,
     router,
   ]);
 

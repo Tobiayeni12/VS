@@ -7,6 +7,8 @@ import { normalizeRoomCode, useRoomPolling } from "@/hooks/useRoomPolling";
 import { useVsReconnectSession } from "@/hooks/useVsReconnectSession";
 import { useRoomPresence } from "@/hooks/useRoomPresence";
 import { playerDisplayName } from "@/lib/roomHelpers";
+import type { RoomState } from "@/lib/gameTypes";
+import { vsRoomSeedSessionKey, writeVsRoomSeedToSession } from "@/lib/vsRoomSession";
 import { youtubeThumbnail, youtubeWatchUrl } from "@/lib/youtube";
 
 export default function RoomSummaryPage() {
@@ -26,6 +28,7 @@ export default function RoomSummaryPage() {
     pollIntervalMs: 1500,
     playerId,
     guestRedirectOnRoomLost: true,
+    roomSeedSessionKey: code ? vsRoomSeedSessionKey(code) : undefined,
   });
 
   const isHost = room?.hostId === playerId;
@@ -90,6 +93,7 @@ export default function RoomSummaryPage() {
       const text = await res.text();
       const data = text ? JSON.parse(text) : {};
       if (!res.ok) throw new Error(data.error || "Failed to start knockout");
+      writeVsRoomSeedToSession(code, data as RoomState);
       const qp = new URLSearchParams({
         playerId,
         name,

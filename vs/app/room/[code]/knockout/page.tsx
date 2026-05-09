@@ -9,6 +9,7 @@ import { useVsReconnectSession } from "@/hooks/useVsReconnectSession";
 import { useRoomPresence } from "@/hooks/useRoomPresence";
 import type { RoomState } from "@/lib/gameTypes";
 import { playerDisplayName } from "@/lib/roomHelpers";
+import { vsRoomSeedSessionKey } from "@/lib/vsRoomSession";
 import {
   videoIdsEqual,
   youtubeThumbnail,
@@ -142,6 +143,7 @@ export default function KnockoutPage() {
     pollIntervalMs: 2000,
     playerId,
     guestRedirectOnRoomLost: true,
+    roomSeedSessionKey: code ? vsRoomSeedSessionKey(code) : undefined,
   });
 
   const isHostForPresence = room?.hostId === playerId;

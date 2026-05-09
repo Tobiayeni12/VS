@@ -5,6 +5,8 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { VsHostFloatingActions } from "@/components/VsHostFloatingActions";
 import { normalizeRoomCode, useRoomPolling } from "@/hooks/useRoomPolling";
 import { useVsReconnectSession } from "@/hooks/useVsReconnectSession";
+import { writeVsRoomSeedToSession } from "@/lib/vsRoomSession";
+import type { RoomState } from "@/lib/gameTypes";
 
 export default function RoomSettingsPage() {
   const params = useParams<{ code: string }>();
@@ -101,6 +103,7 @@ export default function RoomSettingsPage() {
           playerId,
           name,
         });
+        writeVsRoomSeedToSession(code, data as RoomState);
         router.push(`/room/${code}/summary?${qp.toString()}`);
         break;
       }
