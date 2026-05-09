@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import type { RoomState } from "@/lib/gameTypes";
+import { writeVsRoomSeedToSession } from "@/lib/vsRoomSession";
 
 export default function CreatePage() {
   const router = useRouter();
@@ -21,6 +23,9 @@ export default function CreatePage() {
       });
       if (!res.ok) throw new Error("Failed to create room");
       const data = await res.json();
+      if (data.room && data.code) {
+        writeVsRoomSeedToSession(data.code as string, data.room as RoomState);
+      }
       const params = new URLSearchParams({
         playerId: data.hostId,
         name: name || "Host",

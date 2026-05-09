@@ -10,6 +10,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       code: room.code,
       hostId: room.hostId,
+      room,
     });
   } catch (err) {
     if (err instanceof RoomPersistError) {

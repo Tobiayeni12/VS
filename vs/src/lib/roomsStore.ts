@@ -141,7 +141,7 @@ export function setSettings(
   vsTitle?: string
 ): Promise<RoomState | undefined> {
   return (async () => {
-  const room = await loadRoom(code);
+  const room = await getRoomWithBriefRetry(code);
   if (!room) return undefined;
   const resettingLobby = room.status !== "settings";
 
@@ -174,7 +174,7 @@ export function setSettings(
 
 export function markHostReady(code: string, requesterId: string): Promise<RoomState | undefined> {
   return (async () => {
-  const room = await loadRoom(code);
+  const room = await getRoomWithBriefRetry(code);
   if (!room) return undefined;
   if (room.hostId !== requesterId) return undefined;
   room.hostReady = true;
@@ -224,6 +224,28 @@ function createBracketRounds(games: string[]): BracketMatch[][] {
 
 export function getRoom(code: string): Promise<RoomState | undefined> {
   return loadRoom(code);
+}
+
+const GET_ROOM_RETRY_BACKOFF_MS = [100, 200, 350, 500, 700];
+
+/**
+ * Several short load attempts — right after create or save, another serverless
+ * instance or KV read can briefly miss the room while persistence catches up.
+ */
+export async function getRoomWithBriefRetry(
+  code: string
+): Promise<RoomState | undefined> {
+  const upper = code.trim().toUpperCase();
+  for (let attempt = 0; attempt <= GET_ROOM_RETRY_BACKOFF_MS.length; attempt++) {
+    if (attempt > 0) {
+      await new Promise((r) =>
+        setTimeout(r, GET_ROOM_RETRY_BACKOFF_MS[attempt - 1] ?? 150)
+      );
+    }
+    const room = await loadRoom(upper);
+    if (room) return room;
+  }
+  return undefined;
 }
 
 export async function deleteRoom(code: string, requesterId: string): Promise<boolean> {
@@ -277,7 +299,7 @@ export async function touchPlayerPresence(
 
 export function leaveRoom(code: string, requesterId: string): Promise<RoomState | undefined> {
   return (async () => {
-  const room = await loadRoom(code);
+  const room = await getRoomWithBriefRetry(code);
   if (!room) return undefined;
 
   // If the host leaves, delete the room entirely.

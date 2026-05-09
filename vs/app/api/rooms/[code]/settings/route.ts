@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { setSettings, getRoom, markHostReady, saveRoom } from "@/lib/roomsStore";
+import {
+  setSettings,
+  getRoomWithBriefRetry,
+  markHostReady,
+  saveRoom,
+} from "@/lib/roomsStore";
 import {
   fetchYoutubeMetadata,
   parseYouTubeVideoId,
@@ -60,7 +65,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       return NextResponse.json(room);
     }
 
-    const roomForRemove = await getRoom(code);
+    const roomForRemove = await getRoomWithBriefRetry(code);
     const removeCandidate =
       typeof removeVideoId === "string"
         ? removeVideoId.trim()
@@ -110,7 +115,7 @@ export async function POST(req: NextRequest, { params }: Params) {
           : "";
 
     if (paste) {
-      const room = await getRoom(code);
+      const room = await getRoomWithBriefRetry(code);
       if (!room) {
         return NextResponse.json({ error: "Room not found" }, { status: 404 });
       }
@@ -181,7 +186,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       typeof maxGamesPerPlayer === "number" &&
       typeof maxPlayers === "number"
     ) {
-      const roomBefore = await getRoom(code);
+      const roomBefore = await getRoomWithBriefRetry(code);
       if (!roomBefore) {
         return NextResponse.json({ error: "Room not found" }, { status: 404 });
       }

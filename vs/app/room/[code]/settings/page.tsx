@@ -5,7 +5,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { VsHostFloatingActions } from "@/components/VsHostFloatingActions";
 import { normalizeRoomCode, useRoomPolling } from "@/hooks/useRoomPolling";
 import { useVsReconnectSession } from "@/hooks/useVsReconnectSession";
-import { writeVsRoomSeedToSession } from "@/lib/vsRoomSession";
+import { vsRoomSeedSessionKey, writeVsRoomSeedToSession } from "@/lib/vsRoomSession";
 import type { RoomState } from "@/lib/gameTypes";
 
 export default function RoomSettingsPage() {
@@ -26,6 +26,7 @@ export default function RoomSettingsPage() {
     useRoomPolling({
       code,
       pollIntervalMs: 1500,
+      roomSeedSessionKey: code ? vsRoomSeedSessionKey(code) : undefined,
     });
 
   const [maxPlayers, setMaxPlayers] = useState(32);
@@ -70,8 +71,9 @@ export default function RoomSettingsPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    const MAX_ATTEMPTS = 8;
     try {
-      for (let attempt = 0; attempt < 2; attempt++) {
+      for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
         const res = await fetch(`/api/rooms/${code}/settings`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -87,16 +89,17 @@ export default function RoomSettingsPage() {
         const data = text ? JSON.parse(text) : {};
         if (!res.ok) {
           const msg = typeof data.error === "string" ? data.error : "";
-          if (
-            attempt === 0 &&
-            res.status === 404 &&
-            msg.toLowerCase().includes("not found")
-          ) {
-            await new Promise((r) => setTimeout(r, 400));
+          const looksLikeMissingRoom =
+            res.status === 404 ||
+            msg.toLowerCase().includes("not found");
+          if (looksLikeMissingRoom && attempt < MAX_ATTEMPTS - 1) {
+            await new Promise((r) => setTimeout(r, 120 * (attempt + 1)));
             await fetchState();
             continue;
           }
-          throw new Error(data.error || "Failed to save settings");
+          throw new Error(
+            typeof data.error === "string" ? data.error : "Failed to save settings"
+          );
         }
 
         const qp = new URLSearchParams({
@@ -139,7 +142,7 @@ export default function RoomSettingsPage() {
           </p>
         </header>
 
-        {roomError && (
+        {roomError && !room && (
           <p className="text-center text-sm text-red-400">
             {roomError}
           </p>
