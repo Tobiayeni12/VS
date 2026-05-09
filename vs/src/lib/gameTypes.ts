@@ -64,6 +64,8 @@ export type RoomState = {
   players: Player[];
   currentRound: Round | null;
   status: "lobby" | "settings" | "knockout" | "finished";
+  /** Max non-host players who can join (1–32). Host is not counted. */
+  maxPlayers: number;
   maxGames: number;
   maxGamesPerPlayer: number;
   gamePool: GamePoolEntry[];

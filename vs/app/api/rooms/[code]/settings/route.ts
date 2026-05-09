@@ -20,6 +20,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     const {
       maxGames,
       maxGamesPerPlayer,
+      maxPlayers,
       youtubeUrl,
       gameTitle,
       playerId,
@@ -30,6 +31,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     } = body as {
       maxGames?: number;
       maxGamesPerPlayer?: number;
+      maxPlayers?: number;
       youtubeUrl?: string;
       gameTitle?: string;
       playerId?: string;
@@ -174,8 +176,34 @@ export async function POST(req: NextRequest, { params }: Params) {
       return NextResponse.json(room);
     }
 
-    if (typeof maxGames === "number" && typeof maxGamesPerPlayer === "number") {
-      const room = await setSettings(code, maxGames, maxGamesPerPlayer, vsTitle);
+    if (
+      typeof maxGames === "number" &&
+      typeof maxGamesPerPlayer === "number" &&
+      typeof maxPlayers === "number"
+    ) {
+      const roomBefore = await getRoom(code);
+      if (!roomBefore) {
+        return NextResponse.json({ error: "Room not found" }, { status: 404 });
+      }
+      const nonHostCount = roomBefore.players.filter(
+        (p) => p.id !== roomBefore.hostId
+      ).length;
+      const capPlayers = Math.max(1, Math.min(32, Math.floor(maxPlayers)));
+      if (capPlayers < nonHostCount) {
+        return NextResponse.json(
+          {
+            error: `Max players must be at least ${nonHostCount} (${nonHostCount} already joined).`,
+          },
+          { status: 400 }
+        );
+      }
+      const room = await setSettings(
+        code,
+        maxGames,
+        maxGamesPerPlayer,
+        capPlayers,
+        vsTitle
+      );
       if (!room)
         return NextResponse.json({ error: "Room not found" }, { status: 404 });
       return NextResponse.json(room);

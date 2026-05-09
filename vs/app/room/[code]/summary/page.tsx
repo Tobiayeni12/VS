@@ -151,6 +151,10 @@ export default function RoomSummaryPage() {
               <span className="font-semibold">{room.vsTitle || "Untitled VS"}</span>
             </li>
             <li>
+              Max players:{" "}
+              <span className="font-semibold">{room.maxPlayers}</span>
+            </li>
+            <li>
               Total games in this VS:{" "}
               <span className="font-semibold">{room.maxGames}</span>
             </li>

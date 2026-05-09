@@ -31,6 +31,14 @@ export async function POST(req: NextRequest, { params }: Params) {
     );
   }
 
+  const nonHostCount = room.players.filter((p) => p.id !== room.hostId).length;
+  if (nonHostCount >= room.maxPlayers) {
+    return NextResponse.json(
+      { error: "This room is full." },
+      { status: 403 }
+    );
+  }
+
   const updated = await joinRoom(code, name);
   if (!updated) {
     return NextResponse.json({ error: "Unable to join" }, { status: 500 });

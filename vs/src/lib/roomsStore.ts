@@ -27,12 +27,26 @@ export async function saveRoom(room: RoomState): Promise<void> {
   await persistRoom(room);
 }
 
+function ensureRoomShape(room: RoomState): void {
+  if (
+    typeof room.maxPlayers !== "number" ||
+    room.maxPlayers < 1 ||
+    room.maxPlayers > 32
+  ) {
+    room.maxPlayers = 32;
+  }
+}
+
 async function loadRoom(code: string): Promise<RoomState | undefined> {
   const cached = rooms.get(code);
-  if (cached) return cached;
+  if (cached) {
+    ensureRoomShape(cached);
+    return cached;
+  }
   if (!kvEnabled()) return undefined;
   const fromKv = await kvGetJson<RoomState>(roomKey(code));
   if (fromKv) {
+    ensureRoomShape(fromKv);
     rooms.set(code, fromKv);
     return fromKv;
   }
@@ -70,6 +84,7 @@ export async function createRoom(hostName: string): Promise<RoomState> {
     players: [host],
     currentRound: null,
     status: "settings",
+    maxPlayers: 32,
     maxGames: 8,
     maxGamesPerPlayer: 2,
     gamePool: [],
@@ -89,6 +104,7 @@ export function setSettings(
   code: string,
   maxGames: number,
   maxGamesPerPlayer: number,
+  maxPlayers: number,
   vsTitle?: string
 ): Promise<RoomState | undefined> {
   return (async () => {
@@ -105,6 +121,8 @@ export function setSettings(
       room.players.map((player) => [player.id, 0])
     );
   }
+
+  room.maxPlayers = Math.max(1, Math.min(32, maxPlayers));
 
   room.maxGames = Math.max(2, Math.min(32, maxGames));
   room.maxGamesPerPlayer = Math.max(
@@ -430,6 +448,11 @@ export async function joinRoom(code: string, name: string): Promise<RoomState | 
   );
   if (existing) {
     return room;
+  }
+
+  const nonHostCount = room.players.filter((p) => p.id !== room.hostId).length;
+  if (nonHostCount >= room.maxPlayers) {
+    return undefined;
   }
 
   const player: Player = {

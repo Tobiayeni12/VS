@@ -21,6 +21,7 @@ export default function RoomSettingsPage() {
     pollIntervalMs: 1500,
   });
 
+  const [maxPlayers, setMaxPlayers] = useState(32);
   const [maxGames, setMaxGames] = useState(8);
   const [maxGamesPerPlayer, setMaxGamesPerPlayer] = useState(2);
   const [vsTitle, setVsTitle] = useState("");
@@ -36,6 +37,7 @@ export default function RoomSettingsPage() {
     if (!room) return;
     if (initializedRef.current) return;
     initializedRef.current = true;
+    setMaxPlayers(room.maxPlayers);
     setMaxGames(room.maxGames);
     setMaxGamesPerPlayer(room.maxGamesPerPlayer);
     setVsTitle(room.vsTitle ?? "");
@@ -66,6 +68,7 @@ export default function RoomSettingsPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          maxPlayers,
           maxGames,
           maxGamesPerPlayer,
           vsTitle,
@@ -113,6 +116,27 @@ export default function RoomSettingsPage() {
           onSubmit={handleSubmit}
           className="space-y-6 rounded-xl border border-emerald-500/40 bg-emerald-950/40 p-4"
         >
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-green-100">
+              Max players (not counting you as host)
+            </label>
+            <select
+              className="w-full rounded-lg border border-emerald-500/30 bg-emerald-950/30 px-3 py-2 text-sm text-emerald-100 outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400"
+              value={maxPlayers}
+              onChange={(e) => setMaxPlayers(Number(e.target.value))}
+            >
+              {Array.from({ length: 32 }, (_, i) => i + 1).map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-emerald-200/80">
+              Only this many people can join with the room code before the VS
+              starts.
+            </p>
+          </div>
+
           <div className="space-y-2">
             <label className="block text-sm font-medium text-green-100">
               How many games should be in this VS?
