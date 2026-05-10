@@ -130,30 +130,56 @@ export function VsHostFloatingActions({
       </div>
 
       {showLeaderboard && (
-        <div className="w-56 rounded-xl border border-emerald-500/40 bg-slate-900/95 shadow-xl backdrop-blur-sm">
-          <p className="px-4 pt-3 pb-2 text-xs font-bold uppercase tracking-wider text-emerald-300">
-            Leaderboard
-          </p>
-          {leaderboardEntries.length === 0 ? (
-            <p className="px-4 pb-3 text-xs text-slate-400">No wins yet.</p>
-          ) : (
-            <ul className="pb-2">
-              {leaderboardEntries.map((entry, idx) => (
-                <li
-                  key={idx}
-                  className="flex items-center justify-between px-4 py-1.5 text-sm"
-                >
-                  <span className="flex items-center gap-2 text-slate-200">
-                    <span className="w-5 text-xs font-bold text-emerald-400">
-                      #{idx + 1}
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowLeaderboard(false)}
+        >
+          <div
+            className="w-full max-w-md mx-4 rounded-2xl border border-emerald-500/40 bg-slate-900 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-emerald-500/20">
+              <h2 className="text-2xl font-extrabold tracking-tight text-emerald-300">
+                Leaderboard
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowLeaderboard(false)}
+                className="text-slate-400 hover:text-white text-xl leading-none"
+                aria-label="Close leaderboard"
+              >
+                ✕
+              </button>
+            </div>
+
+            {leaderboardEntries.length === 0 ? (
+              <p className="px-6 py-8 text-center text-slate-400 text-lg">
+                No wins yet.
+              </p>
+            ) : (
+              <ul className="px-6 py-4 space-y-3">
+                {leaderboardEntries.map((entry, idx) => (
+                  <li
+                    key={idx}
+                    className="flex items-center justify-between rounded-xl border border-emerald-500/20 bg-emerald-950/30 px-5 py-3"
+                  >
+                    <span className="flex items-center gap-4">
+                      <span className="text-lg font-extrabold text-emerald-400 w-8">
+                        #{idx + 1}
+                      </span>
+                      <span className="text-lg font-semibold text-slate-100">
+                        {entry.name}
+                      </span>
                     </span>
-                    <span className="truncate max-w-[110px]">{entry.name}</span>
-                  </span>
-                  <span className="font-bold text-emerald-300">{entry.wins}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+                    <span className="text-xl font-extrabold text-emerald-300">
+                      {entry.wins}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="px-6 pb-6" />
+          </div>
         </div>
       )}
     </div>
