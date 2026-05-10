@@ -28,7 +28,7 @@ async function upstashCommand<T>(command: unknown[]): Promise<T | null> {
         Authorization: `Bearer ${UPSTASH_TOKEN}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ command }),
+      body: JSON.stringify(command),
       cache: "no-store",
       signal: AbortSignal.timeout(UPSTASH_FETCH_TIMEOUT_MS),
     });
