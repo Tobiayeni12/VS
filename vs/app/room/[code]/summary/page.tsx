@@ -39,6 +39,7 @@ export default function RoomSummaryPage() {
   useEffect(() => {
     if (!room) return;
     if (room.status === "knockout" || room.status === "finished") {
+      writeVsRoomSeedToSession(code, room);
       const qp = new URLSearchParams({ playerId, name });
       router.replace(`/room/${code}/knockout?${qp.toString()}`);
     }

@@ -7,6 +7,7 @@ import { normalizeRoomCode, useRoomPolling } from "@/hooks/useRoomPolling";
 import { useVsReconnectSession } from "@/hooks/useVsReconnectSession";
 import { useRoomPresence } from "@/hooks/useRoomPresence";
 import { playerDisplayName } from "@/lib/roomHelpers";
+import { vsRoomSeedSessionKey, writeVsRoomSeedToSession } from "@/lib/vsRoomSession";
 import { youtubeThumbnail, youtubeWatchUrl } from "@/lib/youtube";
 
 export default function RoomLobbyPage() {
@@ -32,6 +33,8 @@ export default function RoomLobbyPage() {
   useEffect(() => {
     if (!room) return;
     if (room.status === "knockout" || room.status === "finished") {
+      // Write the room snapshot so the knockout page has immediate data without waiting for a poll.
+      writeVsRoomSeedToSession(code, room);
       const qp = new URLSearchParams({ playerId, name });
       router.replace(`/room/${code}/knockout?${qp.toString()}`);
     }

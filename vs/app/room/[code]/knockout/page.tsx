@@ -207,6 +207,7 @@ export default function KnockoutPage() {
   }
 
   const isHost = room.hostId === playerId;
+  const hostName = room.players.find((p) => p.id === room.hostId)?.name ?? "Host";
   const activeMatch = getActiveMatch(room);
 
   const showFinished = room.status === "finished";
@@ -241,7 +242,7 @@ export default function KnockoutPage() {
               : `Phase: ${room.bracket.currentPhase.toUpperCase()}`}
           </p>
           <p className="text-sm text-slate-400">
-            Room {room.code} • Host: {name || "Host"}
+            Room {room.code} • Host: {hostName}
           </p>
         </header>
 
