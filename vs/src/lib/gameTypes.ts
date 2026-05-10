@@ -75,5 +75,7 @@ export type RoomState = {
   winner: string | null;
   playerGameCounts: Record<string, number>;
   knockoutWins: Record<string, number>;
+  /** Set when the host intentionally closes the room so clients redirect immediately. */
+  closed?: boolean;
 };
 

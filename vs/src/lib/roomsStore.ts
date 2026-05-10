@@ -267,7 +267,12 @@ export async function deleteRoom(code: string, requesterId: string): Promise<boo
   if (!room) return false;
   if (room.hostId !== requesterId) return false;
   rooms.delete(code);
-  if (kvEnabled()) await kvDel(roomKey(code));
+  if (kvEnabled()) {
+    // Write a closed marker so polling clients redirect immediately instead of
+    // waiting for repeated 404s. Short TTL — just long enough for all clients
+    // to pick it up. createRoom's uniqueness check will skip this code until it expires.
+    await kvSetJson(roomKey(code), { ...room, closed: true }, 120);
+  }
   return true;
 }
 

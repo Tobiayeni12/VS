@@ -158,6 +158,13 @@ export function useRoomPolling({
 
       consecutive404AfterLoadRef.current = 0;
       const roomState = data as RoomState;
+
+      // Room was intentionally closed by the host — redirect guests immediately.
+      if (roomState.closed && guestRedirectOnRoomLost && Boolean(playerId)) {
+        router.push("/join");
+        return;
+      }
+
       setRoom(roomState);
       lastGoodRoomRef.current = roomState;
       setError(null);
