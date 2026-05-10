@@ -126,6 +126,7 @@ export default function RoomSettingsPage() {
         isHost={Boolean(
           playerId && (!room || playerId === room.hostId)
         )}
+        room={room}
       />
       <button
         type="button"

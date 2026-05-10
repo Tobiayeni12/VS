@@ -242,6 +242,7 @@ export default function KnockoutPage() {
         hostDisplayName={name}
         playerId={playerId}
         isHost={isHost}
+        room={room}
       />
       <div className="w-full space-y-6">
         <header className="space-y-1 text-center">

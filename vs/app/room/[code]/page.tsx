@@ -118,6 +118,7 @@ export default function RoomLobbyPage() {
         hostDisplayName={name}
         playerId={playerId}
         isHost={isHostStrict}
+        room={room}
       />
       <button
         type="button"

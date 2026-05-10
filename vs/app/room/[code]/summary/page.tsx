@@ -144,6 +144,7 @@ export default function RoomSummaryPage() {
         hostDisplayName={name}
         playerId={playerId}
         isHost={isHostStrict}
+        room={room}
       />
       <button
         type="button"
