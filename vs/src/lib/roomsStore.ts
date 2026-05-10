@@ -69,18 +69,32 @@ function ensureRoomShape(room: RoomState): void {
 }
 
 async function loadRoom(code: string): Promise<RoomState | undefined> {
+  if (kvEnabled()) {
+    // KV is the shared source of truth across Vercel instances. Always read from
+    // it so writes made by other instances are visible. In-memory cache is only
+    // current for the instance that last wrote — other instances never see those
+    // writes, causing stale reads (e.g. added games disappearing on next poll).
+    const fromKv = await kvGetJson<RoomState>(roomKey(code));
+    if (fromKv) {
+      ensureRoomShape(fromKv);
+      rooms.set(code, fromKv);
+      return fromKv;
+    }
+    // KV miss: fall back to memory. Covers the brief window between a local
+    // persistRoom write and a read-after-write on the same instance.
+    const cached = rooms.get(code);
+    if (cached) {
+      ensureRoomShape(cached);
+      return cached;
+    }
+    return undefined;
+  }
+
+  // No KV: in-memory is the only store.
   const cached = rooms.get(code);
   if (cached) {
     ensureRoomShape(cached);
     return cached;
-  }
-  if (!kvEnabled()) return undefined;
-  // Match SET retries — cold GETs after create occasionally fail once on Upstash/network.
-  const fromKv = await kvGetJsonReliable<RoomState>(roomKey(code));
-  if (fromKv) {
-    ensureRoomShape(fromKv);
-    rooms.set(code, fromKv);
-    return fromKv;
   }
   return undefined;
 }
