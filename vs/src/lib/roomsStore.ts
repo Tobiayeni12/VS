@@ -6,6 +6,7 @@ import {
   kvEnabled,
   kvGetJson,
   kvGetJsonReliable,
+  kvSetJson,
   kvSetJsonReliable,
 } from "./roomsKv";
 
