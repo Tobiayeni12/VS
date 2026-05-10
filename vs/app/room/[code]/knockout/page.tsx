@@ -154,6 +154,16 @@ export default function KnockoutPage() {
   const [showBracketPreview, setShowBracketPreview] = useState(true);
   const [previewCountdown, setPreviewCountdown] = useState(5);
 
+  // When host restarts, room status flips back to "settings". Send players to lobby
+  // which shows the "Waiting for host" message.
+  useEffect(() => {
+    if (!room) return;
+    if (room.status === "settings") {
+      const qp = new URLSearchParams({ playerId, name });
+      router.replace(`/room/${code}?${qp.toString()}`);
+    }
+  }, [room?.status, code, playerId, name, router]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setPreviewCountdown((prev) => (prev > 1 ? prev - 1 : 1));
