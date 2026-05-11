@@ -39,12 +39,17 @@ export default function RoomSettingsPage() {
 
   async function handleGeneratePrompt() {
     setGenerating(true);
+    setError(null);
     try {
       const res = await fetch("/api/ai/prompt", { method: "POST" });
       const data = await res.json();
-      if (res.ok && data.title) setVsTitle(data.title);
+      if (res.ok && data.title) {
+        setVsTitle(data.title);
+      } else {
+        setError(data.error || "Failed to generate prompt");
+      }
     } catch {
-      // silently fail — host can still type manually
+      setError("Failed to generate prompt — check your connection");
     } finally {
       setGenerating(false);
     }
