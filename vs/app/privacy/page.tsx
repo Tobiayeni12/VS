@@ -135,8 +135,10 @@ export default function PrivacyPage() {
 
         <h2 className="text-lg font-semibold text-white">Contact</h2>
         <p>
-          For privacy inquiries please reach out via the contact information
-          provided on our home page or repository.
+          For privacy inquiries please contact us at{" "}
+          <a href="mailto:tobiayeni12@gmail.com" className="text-emerald-400 hover:underline">
+            tobiayeni12@gmail.com
+          </a>.
         </p>
       </section>
     </main>

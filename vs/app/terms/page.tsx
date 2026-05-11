@@ -113,8 +113,10 @@ export default function TermsPage() {
 
         <h2 className="text-lg font-semibold text-white">Contact</h2>
         <p>
-          Questions about these terms can be directed to the contact
-          information on our home page or repository.
+          Questions about these terms can be directed to{" "}
+          <a href="mailto:tobiayeni12@gmail.com" className="text-emerald-400 hover:underline">
+            tobiayeni12@gmail.com
+          </a>.
         </p>
       </section>
     </main>
