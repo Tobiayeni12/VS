@@ -10,7 +10,7 @@ export async function POST() {
 
   try {
     const message = await client.messages.create({
-      model: "claude-haiku-4-5-20251001",
+      model: "claude-3-5-haiku-20241022",
       max_tokens: 32,
       messages: [
         {
@@ -31,7 +31,8 @@ export async function POST() {
     }
 
     return NextResponse.json({ title });
-  } catch {
-    return NextResponse.json({ error: "Failed to generate prompt" }, { status: 500 });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Failed to generate prompt";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
