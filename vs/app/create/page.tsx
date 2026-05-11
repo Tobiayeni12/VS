@@ -8,6 +8,7 @@ import { writeVsRoomSeedToSession } from "@/lib/vsRoomSession";
 export default function CreatePage() {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,12 +63,27 @@ export default function CreatePage() {
               autoComplete="off"
             />
           </div>
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={ageConfirmed}
+              onChange={(e) => setAgeConfirmed(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-green-400"
+            />
+            <span className="text-xs text-slate-400 leading-relaxed">
+              I confirm I am 13 years of age or older and I agree to the{" "}
+              <a href="/terms" target="_blank" className="text-emerald-400 hover:underline">Terms of Use</a>
+              {" "}and{" "}
+              <a href="/privacy" target="_blank" className="text-emerald-400 hover:underline">Privacy Policy</a>.
+            </span>
+          </label>
+
           {error && (
             <p className="text-sm text-red-400 text-center">{error}</p>
           )}
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !ageConfirmed}
             className="w-full text-sm font-semibold text-green-300 transition hover:text-green-200 disabled:opacity-60"
           >
             {loading ? "Creating..." : "Create room"}

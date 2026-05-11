@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4">
+    <main className="flex min-h-screen flex-col items-center justify-center px-4 pb-10">
       <div className="w-full max-w-5xl flex flex-col items-center justify-center gap-10 md:flex-row md:items-center md:justify-between">
         <div className="w-full md:w-1/2 flex items-center justify-center">
           <img
@@ -35,6 +35,15 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      <footer className="absolute bottom-6 flex gap-6 text-xs text-slate-500">
+        <Link href="/privacy" className="hover:text-slate-300 transition">
+          Privacy Policy
+        </Link>
+        <Link href="/terms" className="hover:text-slate-300 transition">
+          Terms of Use
+        </Link>
+      </footer>
     </main>
   );
 }
