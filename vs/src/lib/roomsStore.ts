@@ -345,24 +345,43 @@ export function leaveRoom(code: string, requesterId: string): Promise<RoomState 
   })();
 }
 
-function autoResolveByes(rounds: BracketMatch[][]): void {
-  // Only the first round can have a bye (last match with gameB null)
-  const round0 = rounds[0];
-  if (!round0) return;
-  for (let matchIdx = 0; matchIdx < round0.length; matchIdx++) {
-    const match = round0[matchIdx]!;
-    if (match.gameA && !match.gameB && !match.winner) {
-      match.winner = match.gameA;
-      if (rounds.length > 1) {
-        const nextRound = rounds[1]!;
-        const nextMatchIndex = Math.floor(matchIdx / 2);
-        const isLeftSlot = matchIdx % 2 === 0;
-        const nextMatch = nextRound[nextMatchIndex];
-        if (nextMatch) {
-          if (isLeftSlot) nextMatch.gameA = match.gameA;
-          else nextMatch.gameB = match.gameA;
-        }
-      }
+/**
+ * Resolve a single bye at [roundIdx][matchIdx] and cascade upward.
+ * A match is a bye when it has gameA but gameB will never arrive —
+ * i.e. gameB is null AND the previous round has no match at slot (matchIdx*2+1).
+ */
+function resolveBye(rounds: BracketMatch[][], roundIdx: number, matchIdx: number): void {
+  const round = rounds[roundIdx];
+  if (!round) return;
+  const match = round[matchIdx];
+  if (!match || match.winner || !match.gameA || match.gameB !== null) return;
+
+  const prevRound = rounds[roundIdx - 1];
+  const feederBIdx = matchIdx * 2 + 1;
+  // If there IS a feeder match in the previous round for the gameB slot, it's not a bye yet.
+  if (prevRound && prevRound[feederBIdx] !== undefined) return;
+
+  match.winner = match.gameA;
+
+  if (roundIdx < rounds.length - 1) {
+    const nextRound = rounds[roundIdx + 1]!;
+    const nextMatchIndex = Math.floor(matchIdx / 2);
+    const isLeftSlot = matchIdx % 2 === 0;
+    const nextMatch = nextRound[nextMatchIndex];
+    if (nextMatch) {
+      if (isLeftSlot) nextMatch.gameA = match.gameA;
+      else nextMatch.gameB = match.gameA;
+      resolveBye(rounds, roundIdx + 1, nextMatchIndex);
+    }
+  }
+}
+
+/** Resolve all byes across every round (processes rounds in order so cascading works). */
+function autoResolveAllByes(rounds: BracketMatch[][]): void {
+  for (let roundIdx = 0; roundIdx < rounds.length; roundIdx++) {
+    const round = rounds[roundIdx]!;
+    for (let matchIdx = 0; matchIdx < round.length; matchIdx++) {
+      resolveBye(rounds, roundIdx, matchIdx);
     }
   }
 }
@@ -402,9 +421,9 @@ export async function startKnockout(code: string): Promise<RoomState | undefined
     animationComplete: false,
   };
 
-  // Auto-resolve bye matches created by odd-length game lists
-  autoResolveByes(bracket.left.rounds);
-  autoResolveByes(bracket.right.rounds);
+  // Auto-resolve bye matches created by odd-length game lists (all rounds, not just round 0)
+  autoResolveAllByes(bracket.left.rounds);
+  autoResolveAllByes(bracket.right.rounds);
 
   // If right side is fully resolved by byes (e.g. 1 game), mark it complete now
   const rightFinal = bracket.right.rounds[bracket.right.rounds.length - 1];
@@ -458,6 +477,9 @@ function advanceInPhase(rounds: BracketMatch[][], matchId: string, winner: strin
             } else {
               nextMatch.gameB = winner;
             }
+            // Dynamically resolve any bye that was just created in the next round
+            // (happens when an odd-numbered match count leaves a slot with no feeder).
+            resolveBye(rounds, roundIdx + 1, nextMatchIndex);
           }
         }
         return true;
@@ -472,7 +494,7 @@ export async function chooseWinner(
   matchId: string,
   winner: string
 ): Promise<RoomState | undefined> {
-  const room = await loadRoom(code);
+  const room = await getRoomWithBriefRetry(code);
   if (!room || !room.bracket) return undefined;
 
   // After the final pick, status becomes "finished". A duplicate POST (double-click,
@@ -516,6 +538,12 @@ export async function chooseWinner(
         bracket.right.winner = finalRound[0]?.winner || null;
         bracket.right.completed = true;
 
+        // Recover left.winner if it was lost due to stale state
+        if (bracket.left.completed && !bracket.left.winner) {
+          const leftFinal = bracket.left.rounds[bracket.left.rounds.length - 1];
+          bracket.left.winner = leftFinal?.[0]?.winner ?? null;
+        }
+
         if (bracket.left.winner && bracket.right.winner) {
           bracket.finals = {
             id: randomUUID(),
@@ -550,7 +578,9 @@ export async function chooseWinner(
     }
   }
 
-  await persistRoom(room);
+  if (matchFound) {
+    await persistRoom(room);
+  }
   return room;
 }
 
