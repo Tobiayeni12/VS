@@ -35,6 +35,20 @@ export default function RoomSettingsPage() {
   const [vsTitle, setVsTitle] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+
+  async function handleGeneratePrompt() {
+    setGenerating(true);
+    try {
+      const res = await fetch("/api/ai/prompt", { method: "POST" });
+      const data = await res.json();
+      if (res.ok && data.title) setVsTitle(data.title);
+    } catch {
+      // silently fail — host can still type manually
+    } finally {
+      setGenerating(false);
+    }
+  }
 
   const initializedRef = useRef(false);
   useEffect(() => {
@@ -216,12 +230,22 @@ export default function RoomSettingsPage() {
             <label className="block text-sm font-medium text-green-100">
               Title of the VS
             </label>
-            <input
-              className="w-full rounded-lg border border-emerald-500/30 bg-emerald-950/30 px-3 py-2 text-sm text-emerald-100 outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400"
-              value={vsTitle}
-              onChange={(e) => setVsTitle(e.target.value)}
-              placeholder="Enter VS title"
-            />
+            <div className="flex gap-2">
+              <input
+                className="flex-1 rounded-lg border border-emerald-500/30 bg-emerald-950/30 px-3 py-2 text-sm text-emerald-100 outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400"
+                value={vsTitle}
+                onChange={(e) => setVsTitle(e.target.value)}
+                placeholder="Enter VS title"
+              />
+              <button
+                type="button"
+                onClick={handleGeneratePrompt}
+                disabled={generating}
+                className="shrink-0 rounded-lg border border-emerald-500/30 bg-emerald-950/30 px-3 py-2 text-sm font-semibold text-emerald-300 transition hover:bg-emerald-900/40 disabled:opacity-60"
+              >
+                {generating ? "..." : "AI"}
+              </button>
+            </div>
           </div>
 
           {error && <p className="text-sm text-red-400">{error}</p>}

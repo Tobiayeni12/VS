@@ -1,0 +1,37 @@
+import Anthropic from "@anthropic-ai/sdk";
+import { NextResponse } from "next/server";
+
+const client = new Anthropic();
+
+export async function POST() {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return NextResponse.json({ error: "AI not configured" }, { status: 503 });
+  }
+
+  try {
+    const message = await client.messages.create({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 32,
+      messages: [
+        {
+          role: "user",
+          content:
+            "Generate a single short VS tournament title for a group of friends debating their favourite video games. " +
+            "Examples: 'Best Open World Game of All Time', 'Most Iconic Final Boss', 'Hardest Game Ever Made', 'Best Multiplayer Game', 'Most Nostalgic Game'. " +
+            "Reply with only the title, no punctuation at the end, no quotes, no explanation.",
+        },
+      ],
+    });
+
+    const title =
+      message.content[0]?.type === "text" ? message.content[0].text.trim() : "";
+
+    if (!title) {
+      return NextResponse.json({ error: "No title generated" }, { status: 500 });
+    }
+
+    return NextResponse.json({ title });
+  } catch {
+    return NextResponse.json({ error: "Failed to generate prompt" }, { status: 500 });
+  }
+}
