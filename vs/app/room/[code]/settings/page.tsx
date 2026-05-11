@@ -246,9 +246,9 @@ export default function RoomSettingsPage() {
                 type="button"
                 onClick={handleGeneratePrompt}
                 disabled={generating}
-                className="shrink-0 rounded-lg border border-emerald-500/30 bg-emerald-950/30 px-3 py-2 text-sm font-semibold text-emerald-300 transition hover:bg-emerald-900/40 disabled:opacity-60"
+                className="shrink-0 rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(0,0,0,0.6)] transition hover:bg-zinc-900 hover:shadow-[0_0_12px_rgba(0,0,0,0.8)] disabled:opacity-60"
               >
-                {generating ? "..." : "AI"}
+                {generating ? "..." : "Generate"}
               </button>
             </div>
           </div>
