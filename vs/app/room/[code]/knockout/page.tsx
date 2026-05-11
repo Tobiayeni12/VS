@@ -86,15 +86,17 @@ function getActiveMatch(room: RoomState): ActiveMatch | null {
 
 function getStageLabel(room: RoomState, activeMatch: ActiveMatch | null): string {
   if (!activeMatch) return "Preparing next matchup";
-  if (activeMatch.phase === "finals") return "Final";
+  if (activeMatch.phase === "finals") return "Grand Final";
 
-  const totalTeams = room.gamePool.length;
-  const teamsInRound = Math.max(2, Math.floor(totalTeams / 2 ** activeMatch.roundIndex));
+  const side = activeMatch.phase === "left" ? room.bracket!.left : room.bracket!.right;
+  const groupLabel = activeMatch.phase === "left" ? "Group A" : "Group B";
+  const totalRounds = side.rounds.length;
+  const roundsFromEnd = totalRounds - 1 - activeMatch.roundIndex;
 
-  if (teamsInRound === 8) return "Quarterfinals";
-  if (teamsInRound === 4) return "Semifinals";
-  if (teamsInRound === 2) return "Final";
-  return `Round of ${teamsInRound}`;
+  if (roundsFromEnd === 0) return `${groupLabel} — Final`;
+  if (roundsFromEnd === 1) return `${groupLabel} — Semifinal`;
+  if (roundsFromEnd === 2) return `${groupLabel} — Quarterfinal`;
+  return `${groupLabel} — Round ${activeMatch.roundIndex + 1}`;
 }
 
 function getMatchLabel(room: RoomState, activeMatch: ActiveMatch | null): string {
@@ -250,7 +252,11 @@ export default function KnockoutPage() {
           <p className="text-sm font-semibold capitalize">
             {room.bracket.currentPhase === "finished"
               ? "Tournament Complete"
-              : `Phase: ${room.bracket.currentPhase.toUpperCase()}`}
+              : room.bracket.currentPhase === "left"
+              ? "Group A"
+              : room.bracket.currentPhase === "right"
+              ? "Group B"
+              : "Grand Final"}
           </p>
           <p className="text-sm text-slate-400">
             Room {room.code} • Host: {hostName}
