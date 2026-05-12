@@ -3,6 +3,7 @@
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { VsHostFloatingActions } from "@/components/VsHostFloatingActions";
+import QRCode from "react-qr-code";
 import { normalizeRoomCode, useRoomPolling } from "@/hooks/useRoomPolling";
 import { useVsReconnectSession } from "@/hooks/useVsReconnectSession";
 import { vsRoomSeedSessionKey, writeVsRoomSeedToSession } from "@/lib/vsRoomSession";
@@ -272,7 +273,7 @@ export default function RoomSettingsPage() {
           </button>
         </form>
 
-        <div className="flex w-full justify-center pt-2">
+        <div className="flex w-full flex-col items-center gap-4 pt-2 sm:flex-row sm:justify-center">
           <div className="flex flex-col items-center rounded-xl border border-emerald-500/40 bg-emerald-950/30 px-6 py-4 text-center">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -290,6 +291,18 @@ export default function RoomSettingsPage() {
               {roomLoading && !room
                 ? "0"
                 : Math.max(0, (room?.players?.length ?? 0) - 1)}
+            </p>
+          </div>
+
+          <div className="flex flex-col items-center rounded-xl border border-emerald-500/40 bg-white p-4 text-center">
+            <QRCode
+              value={`https://myversus.app/join?code=${code}`}
+              size={120}
+              bgColor="#ffffff"
+              fgColor="#000000"
+            />
+            <p className="mt-2 text-xs font-semibold text-slate-700">
+              Scan to join
             </p>
           </div>
         </div>

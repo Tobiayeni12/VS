@@ -1,15 +1,16 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, Suspense, useEffect, useState } from "react";
 import {
   readVsRoomSession,
   type VsStoredRoomSession,
 } from "@/lib/vsRoomSession";
 
-export default function JoinPage() {
+function JoinForm() {
   const router = useRouter();
-  const [code, setCode] = useState("");
+  const searchParams = useSearchParams();
+  const [code, setCode] = useState(searchParams.get("code")?.toUpperCase() ?? "");
   const [name, setName] = useState("");
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -145,5 +146,13 @@ export default function JoinPage() {
         </form>
       </div>
     </main>
+  );
+}
+
+export default function JoinPage() {
+  return (
+    <Suspense>
+      <JoinForm />
+    </Suspense>
   );
 }
