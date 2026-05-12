@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { HowToPlayModal } from "@/components/HowToPlayModal";
 
 export default function HomePage() {
   return (
@@ -32,6 +33,7 @@ export default function HomePage() {
             >
               Join VS
             </Link>
+            <HowToPlayModal />
           </div>
         </div>
       </div>
