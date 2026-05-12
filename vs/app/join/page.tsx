@@ -3,6 +3,8 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useEffect, useState } from "react";
 import {
+  clearVsRoomSession,
+  readAllVsRoomSessions,
   readVsRoomSession,
   type VsStoredRoomSession,
 } from "@/lib/vsRoomSession";
@@ -15,9 +17,33 @@ function JoinForm() {
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [storedHint, setStoredHint] = useState<VsStoredRoomSession | null>(
-    null
-  );
+  const [storedHint, setStoredHint] = useState<VsStoredRoomSession | null>(null);
+
+  // On mount: leave all rooms the player is still stored in, so they're
+  // removed from the player list immediately. Capture any name hint first.
+  useEffect(() => {
+    const sessions = readAllVsRoomSessions();
+    if (sessions.length === 0) return;
+
+    // If the code was pre-filled via QR scan, pre-fill their previous name too.
+    const prefilledCode = searchParams.get("code")?.toUpperCase() ?? "";
+    if (prefilledCode) {
+      const match = sessions.find((s) => s.code === prefilledCode);
+      if (match) setName(match.name);
+    }
+
+    // Leave all rooms and clear sessions.
+    sessions.forEach(({ code: roomCode, playerId }) => {
+      fetch(`/api/rooms/${roomCode}/leave`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playerId }),
+        keepalive: true,
+      }).catch(() => undefined);
+      clearVsRoomSession(roomCode);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const clean = code.trim().toUpperCase();

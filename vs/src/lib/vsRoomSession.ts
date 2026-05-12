@@ -75,3 +75,20 @@ export function clearVsRoomSession(code: string): void {
     // ignore
   }
 }
+
+export function readAllVsRoomSessions(): { code: string; playerId: string; name: string }[] {
+  if (typeof window === "undefined") return [];
+  const results: { code: string; playerId: string; name: string }[] = [];
+  try {
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (!key?.startsWith(STORAGE_KEY_PREFIX + ":")) continue;
+      const code = key.slice((STORAGE_KEY_PREFIX + ":").length);
+      const session = readVsRoomSession(code);
+      if (session) results.push({ code, ...session });
+    }
+  } catch {
+    // ignore
+  }
+  return results;
+}
