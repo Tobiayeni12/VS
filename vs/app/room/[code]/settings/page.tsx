@@ -37,6 +37,7 @@ export default function RoomSettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [showPlayers, setShowPlayers] = useState(false);
 
   async function handleGeneratePrompt() {
     setGenerating(true);
@@ -273,8 +274,52 @@ export default function RoomSettingsPage() {
           </button>
         </form>
 
+        {showPlayers && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
+            onClick={() => setShowPlayers(false)}
+          >
+            <div
+              className="w-full max-w-sm rounded-2xl border border-emerald-500/30 bg-slate-900 p-6 shadow-2xl space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-bold text-white">Players in room</h2>
+                <button
+                  type="button"
+                  onClick={() => setShowPlayers(false)}
+                  className="text-slate-400 hover:text-white transition"
+                >
+                  ✕
+                </button>
+              </div>
+              {room && room.players.filter((p) => p.id !== room.hostId).length === 0 ? (
+                <p className="text-sm text-slate-400 text-center py-4">No players have joined yet.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {room?.players
+                    .filter((p) => p.id !== room.hostId)
+                    .map((p) => (
+                      <li
+                        key={p.id}
+                        className="flex items-center gap-3 rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-sm text-slate-100"
+                      >
+                        <span className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
+                        {p.name}
+                      </li>
+                    ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="flex w-full flex-col items-center gap-4 pt-2 sm:flex-row sm:justify-center">
-          <div className="flex flex-col items-center rounded-xl border border-emerald-500/40 bg-emerald-950/30 px-6 py-4 text-center">
+          <button
+            type="button"
+            onClick={() => setShowPlayers(true)}
+            className="flex flex-col items-center rounded-xl border border-emerald-500/40 bg-emerald-950/30 px-6 py-4 text-center transition hover:bg-emerald-900/40"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -292,7 +337,7 @@ export default function RoomSettingsPage() {
                 ? "0"
                 : Math.max(0, (room?.players?.length ?? 0) - 1)}
             </p>
-          </div>
+          </button>
 
           <div className="flex flex-col items-center rounded-xl border border-emerald-500/40 bg-white p-4 text-center">
             <QRCode
